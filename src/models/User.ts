@@ -6,7 +6,7 @@ interface IUser {
   nickname: string;
   password: string;
   avatarUrl: string;
-  studyLog?: Types.ObjectId[];
+  studyLog: Types.ObjectId[];
 }
 
 const userSchema = new mongoose.Schema<IUser>({

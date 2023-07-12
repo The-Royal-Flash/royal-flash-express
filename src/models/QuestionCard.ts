@@ -3,7 +3,7 @@ import mongoose from "mongoose";
 interface IQuestionCard {
   question: string;
   answer: string;
-  link?: string;
+  link: string;
 }
 
 const questionCardSchema = new mongoose.Schema<IQuestionCard>({
