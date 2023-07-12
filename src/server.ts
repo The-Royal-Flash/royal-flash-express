@@ -1,15 +1,11 @@
 import express, { Express, Request, Response } from "express";
-import { json } from "body-parser";
-import apiRouter from "./routes/apiRouter";
+import api from "./api/api";
 
 const app: Express = express();
 
-app.use(json());
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
 
-app.use("/api", apiRouter);
-
-app.get("*", (req: Request, res: Response) => {
-  res.send("Express with Typescript!");
-});
+app.use("/api", api);
 
 export default app;
