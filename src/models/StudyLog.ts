@@ -1,8 +1,8 @@
 import mongoose, { Types } from "mongoose";
 
 interface IStudyLog {
-  wrongList?: Types.ObjectId[];
-  correctList?: Types.ObjectId[];
+  wrongList: Types.ObjectId[];
+  correctList: Types.ObjectId[];
   createAt: Date;
   owner: Types.ObjectId;
 }
