@@ -8,16 +8,10 @@ export const localRegester = async (req: Request, res: Response) => {
 
   try {
     if (password !== confirmPassword) {
-      return res.status(400).send({
-        isSuccess: false,
-        message: "비밀번호가 일치하지 않습니다.",
-      });
+      throw new Error("비밀번호가 일치하지 않습니다.");
     }
     if (exists) {
-      return res.status(400).send({
-        isSuccess: false,
-        message: "중복된 이메일 또는 닉네임 입니다.",
-      });
+      throw new Error("중복된 이메일 또는 닉네임 입니다.");
     }
 
     await User.create({
@@ -32,10 +26,17 @@ export const localRegester = async (req: Request, res: Response) => {
       message: "회원가입이 완료되었습니다.",
     });
   } catch (error) {
-    return res.status(400).send({
-      isSuccess: false,
-      message: error,
-    });
+    if (error instanceof Error) {
+      return res.status(400).send({
+        isSuccess: false,
+        message: error.message,
+      });
+    } else {
+      return res.status(400).send({
+        isSuccess: false,
+        message: String(error),
+      });
+    }
   }
 };
 
@@ -46,20 +47,24 @@ export const checkEmail = async (req: Request, res: Response) => {
 
   try {
     if (exists) {
-      return res.status(400).send({
-        isSuccess: false,
-        message: "중복된 이메일 입니다.",
-      });
+      throw new Error("중복된 이메일 입니다.");
     }
     return res.status(200).send({
       isSuccess: true,
       message: "사용 가능한 이메일 입니다.",
     });
   } catch (error) {
-    return res.status(400).send({
-      isSuccess: false,
-      message: error,
-    });
+    if (error instanceof Error) {
+      return res.status(400).send({
+        isSuccess: false,
+        message: error.message,
+      });
+    } else {
+      return res.status(400).send({
+        isSuccess: false,
+        message: String(error),
+      });
+    }
   }
 };
 
@@ -70,19 +75,23 @@ export const checkNickname = async (req: Request, res: Response) => {
 
   try {
     if (exists) {
-      return res.status(400).send({
-        isSuccess: false,
-        message: "중복된 닉네임 입니다.",
-      });
+      throw new Error("중복된 닉네임 입니다.");
     }
     return res.status(200).send({
       isSuccess: true,
       message: "사용 가능한 닉네임 입니다.",
     });
   } catch (error) {
-    return res.status(400).send({
-      isSuccess: false,
-      message: error,
-    });
+    if (error instanceof Error) {
+      return res.status(400).send({
+        isSuccess: false,
+        message: error.message,
+      });
+    } else {
+      return res.status(400).send({
+        isSuccess: false,
+        message: String(error),
+      });
+    }
   }
 };
