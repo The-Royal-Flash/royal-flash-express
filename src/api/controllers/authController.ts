@@ -101,7 +101,7 @@ export const checkNickname = async (req: Request, res: Response) => {
 /* <-- 로그인 --> */
 export const loginLocal = async (req: Request, res: Response) => {
   const { email, password } = req.body;
-  const user = await User.findOne({ email }).populate("studylogs");
+  const user = await User.findOne({ email });
 
   try {
     if (!user) {
@@ -119,7 +119,7 @@ export const loginLocal = async (req: Request, res: Response) => {
           email: user.email,
           nickname: user.nickname,
           avatarUrl: user.avatarUrl,
-          studyLog: user.studyLog,
+          // studyLog: user.studyLog,
         },
         process.env.ACCESS_SECRET as string,
         {
@@ -135,7 +135,7 @@ export const loginLocal = async (req: Request, res: Response) => {
           email: user.email,
           nickname: user.nickname,
           avatarUrl: user.avatarUrl,
-          studyLog: user.studyLog,
+          // studyLog: user.studyLog,
         },
         process.env.REFRESH_SECRET as string,
         {
