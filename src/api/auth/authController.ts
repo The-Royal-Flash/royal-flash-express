@@ -1,6 +1,7 @@
 import { NextFunction, Request, Response } from "express";
 import User from "../../models/User";
 import bcrypt from "bcrypt";
+import jwt from "jsonwebtoken";
 
 /* <-- 회원가입 --> */
 export const localRegester = async (req: Request, res: Response) => {
@@ -9,10 +10,10 @@ export const localRegester = async (req: Request, res: Response) => {
 
   try {
     if (password !== confirmPassword) {
-      throw new Error("비밀번호가 일치하지 않습니다.");
+      throw new Error("Password mismatch");
     }
     if (exists) {
-      throw new Error("중복된 이메일 또는 닉네임 입니다.");
+      throw new Error("Duplicate email or nickname");
     }
 
     await User.create({
@@ -24,7 +25,7 @@ export const localRegester = async (req: Request, res: Response) => {
 
     return res.status(200).send({
       isSuccess: true,
-      message: "회원가입이 완료되었습니다.",
+      message: "Sign-up Successful",
     });
   } catch (error) {
     if (error instanceof Error) {
@@ -48,11 +49,11 @@ export const checkEmail = async (req: Request, res: Response) => {
 
   try {
     if (exists) {
-      throw new Error("중복된 이메일 입니다.");
+      throw new Error("Duplicate Email");
     }
     return res.status(200).send({
       isSuccess: true,
-      message: "사용 가능한 이메일 입니다.",
+      message: "Available Email",
     });
   } catch (error) {
     if (error instanceof Error) {
@@ -76,11 +77,11 @@ export const checkNickname = async (req: Request, res: Response) => {
 
   try {
     if (exists) {
-      throw new Error("중복된 닉네임 입니다.");
+      throw new Error("Duplicate Nickname");
     }
     return res.status(200).send({
       isSuccess: true,
-      message: "사용 가능한 닉네임 입니다.",
+      message: "Available Nickname",
     });
   } catch (error) {
     if (error instanceof Error) {
@@ -98,28 +99,66 @@ export const checkNickname = async (req: Request, res: Response) => {
 };
 
 /* <-- 로그인 --> */
-export const loginLocal = async (
-  req: Request,
-  res: Response,
-  next: NextFunction
-) => {
+export const loginLocal = async (req: Request, res: Response) => {
   const { email, password } = req.body;
   const user = await User.findOne({ email }).populate("studylogs");
 
   try {
     if (!user) {
-      throw new Error(
-        "가입된 계정이 존재하지 않습니다. Email 정보를 확인하세요."
-      );
+      throw new Error("Email is not queried");
     } else {
       const pass = await bcrypt.compare(password, user.password);
       if (!pass) {
-        throw new Error(
-          "Email 또는 비밀번호를 잘못 입력했습니다. 입력하신 내용을 다시 확인해주세요."
-        );
+        throw new Error("Email or password is invalid");
       }
 
-      // jwt 인증 부분
+      // access Token 발급
+      const accessToken = jwt.sign(
+        {
+          id: user._id,
+          email: user.email,
+          nickname: user.nickname,
+          avatarUrl: user.avatarUrl,
+          studyLog: user.studyLog,
+        },
+        process.env.ACCESS_SECRET as string,
+        {
+          expiresIn: "30m",
+          issuer: "Royal Flash",
+        }
+      );
+
+      // refresh Token 발급
+      const refreshToken = jwt.sign(
+        {
+          id: user._id,
+          email: user.email,
+          nickname: user.nickname,
+          avatarUrl: user.avatarUrl,
+          studyLog: user.studyLog,
+        },
+        process.env.REFRESH_SECRET as string,
+        {
+          expiresIn: "24h",
+          issuer: "Royal Flash",
+        }
+      );
+
+      // token 전송
+      res.cookie("accessToken", accessToken, {
+        secure: false, // http: false, https: true
+        httpOnly: true,
+      });
+      res.cookie("refreshToken", refreshToken, {
+        secure: false, // http: false, https: true
+        httpOnly: true,
+      });
+
+      // 로그인 성공 반환
+      res.status(200).json({
+        isSuccess: true,
+        message: "Sign-in Successful",
+      });
     }
   } catch (error) {
     if (error instanceof Error) {
@@ -136,14 +175,26 @@ export const loginLocal = async (
   }
 };
 
-// 엑세스 토큰
-export const accesstoken = (req: Request, res: Response) => {};
-
-// 리프레시 토큰
-export const refreshtoken = (req: Request, res: Response) => {};
-
-// 로그인한 사용자 정보 전달
-export const loginSuccess = (req: Request, res: Response) => {};
-
 /* <-- 로그아웃 --> */
-export const logout = (req: Request, res: Response) => {};
+export const logout = (req: Request, res: Response) => {
+  try {
+    req.cookies("accessToken", "");
+
+    return res.status(200).send({
+      isSuccess: true,
+      message: "Logout Successful",
+    });
+  } catch (error) {
+    if (error instanceof Error) {
+      return res.status(500).send({
+        isSuccess: false,
+        message: error.message,
+      });
+    } else {
+      return res.status(500).send({
+        isSuccess: false,
+        message: String(error),
+      });
+    }
+  }
+};
