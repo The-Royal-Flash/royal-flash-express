@@ -50,30 +50,41 @@ const authTokenMiddleware = async (
                     message: "Invalid refresh token",
                   });
                 }
+
+                // Refresh Token이 유요한 경우, 새로운 AccessToken 발급
+                const newAccessToken = jwt.sign(
+                  decoded.payload,
+                  process.env.ACCESS_SECRET as string,
+                  {
+                    expiresIn: "30m",
+                    issuer: "Royal Flash",
+                  }
+                );
+
+                // 갱신된 AccessToken을 쿠키에 설정
+                res.cookie("accessToken", newAccessToken, {
+                  secure: false, // http: false, https: true
+                  httpOnly: true,
+                });
+
+                // Request 객체에 사용자 정보 추가
+                (req as any).user = decoded.payload;
+
+                next();
               }
             );
-
-            // Refresh Token이 유요한 경우, 새로운 AccessToken 발급
-            const newAccessToken = jwt.sign(
-              decoded.payload,
-              process.env.ACCESS_SECRET as string,
-              {
-                expiresIn: "30m",
-                issuer: "Royal Flash",
-              }
-            );
-
-            // 갱신된 AccessToken을 쿠키에 설정
-            res.cookie("accessToken", newAccessToken, {
-              secure: false, // http: false, https: true
-              httpOnly: true,
+          } else {
+            // 다른 AccessToken 관련 에러인 경우
+            return res.status(403).send({
+              isSuccess: false,
+              message: "Invalid access token",
             });
-
-            // Request 객체에 사용자 정보 추가
-            (req as any).user = decoded.payload;
-
-            next();
           }
+        } else {
+          // AccessToken이 유요한 경우
+          (req as any).user = decoded.payload;
+
+          next();
         }
       }
     );
