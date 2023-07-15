@@ -1,7 +1,7 @@
 import { NextFunction, Request, Response } from "express";
 import User from "../../models/User";
 import bcrypt from "bcrypt";
-import jwt from "jsonwebtoken";
+import { createAccessToken, createRefreshToken } from "../../utils/createJWT";
 
 /* <-- 회원가입 --> */
 export const localRegester = async (req: Request, res: Response) => {
@@ -112,39 +112,27 @@ export const loginLocal = async (req: Request, res: Response) => {
         throw new Error("Email or password is invalid");
       }
 
-      // access Token 발급
-      const accessToken = jwt.sign(
-        {
-          id: user._id,
-          email: user.email,
-          nickname: user.nickname,
-          avatarUrl: user.avatarUrl,
-          // studyLog: user.studyLog,
-        },
-        process.env.ACCESS_SECRET as string,
-        {
-          expiresIn: "30m",
-          issuer: "Royal Flash",
-        }
-      );
+      // Access Token 발급
+      const accessToken = createAccessToken({
+        id: user._id,
+        email: user.email,
+        name: user.name,
+        nickname: user.nickname,
+        avatarUrl: user.avatarUrl,
+        // studyLog: user.studyLog,
+      });
 
-      // refresh Token 발급
-      const refreshToken = jwt.sign(
-        {
-          id: user._id,
-          email: user.email,
-          nickname: user.nickname,
-          avatarUrl: user.avatarUrl,
-          // studyLog: user.studyLog,
-        },
-        process.env.REFRESH_SECRET as string,
-        {
-          expiresIn: "24h",
-          issuer: "Royal Flash",
-        }
-      );
+      // Refresh Token 발급
+      const refreshToken = createRefreshToken({
+        id: user._id,
+        email: user.email,
+        name: user.name,
+        nickname: user.nickname,
+        avatarUrl: user.avatarUrl,
+        // studyLog: user.studyLog,
+      });
 
-      // token 전송
+      // Token 전송
       res.cookie("accessToken", accessToken, {
         secure: false, // http: false, https: true
         httpOnly: true,
