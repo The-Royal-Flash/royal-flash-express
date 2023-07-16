@@ -290,6 +290,7 @@ export const uploadAvatar = async (req: Request, res: Response) => {
     return res.status(200).send({
       isSuccess: true,
       message: "Modify Successful",
+      avatarUrl: (req as any).user.avatarUrl,
     });
   } catch (error) {
     if (error instanceof Error) {

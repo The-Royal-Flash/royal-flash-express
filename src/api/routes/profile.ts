@@ -5,7 +5,9 @@ import {
   getProfile,
   uploadAvatar,
 } from "../controllers/profileController";
-import uploadAvatarMiddleware from "../../middlewares/uploadAvatarMiddleware";
+import uploadAvatarMiddleware, {
+  uploadAvatarErrorMiddleware,
+} from "../../middlewares/uploadAvatarMiddleware";
 
 const profile: Router = express.Router();
 
@@ -14,6 +16,7 @@ profile.route("/edit/name").post(editName);
 profile.route("/edit/nickname").post(editNickname);
 profile
   .route("/edit/avatar")
-  .post(uploadAvatarMiddleware.single("file"), uploadAvatar);
+  .post(uploadAvatarMiddleware.single("image"), uploadAvatar);
+profile.use(uploadAvatarErrorMiddleware);
 
 export default profile;
