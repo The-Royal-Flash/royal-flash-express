@@ -3,12 +3,20 @@ import {
   editName,
   editNickname,
   getProfile,
+  uploadAvatar,
 } from "../controllers/profileController";
+import uploadAvatarMiddleware, {
+  uploadAvatarErrorMiddleware,
+} from "../../middlewares/uploadAvatarMiddleware";
 
 const profile: Router = express.Router();
 
 profile.route("/").get(getProfile);
 profile.route("/edit/name").post(editName);
 profile.route("/edit/nickname").post(editNickname);
+profile
+  .route("/edit/avatar")
+  .post(uploadAvatarMiddleware.single("image"), uploadAvatar);
+profile.use(uploadAvatarErrorMiddleware);
 
 export default profile;
