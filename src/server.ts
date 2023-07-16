@@ -16,6 +16,7 @@ app.use(
   })
 );
 
+app.use("/uploads", express.static("uploads"));
 app.use("/api", api);
 
 export default app;
