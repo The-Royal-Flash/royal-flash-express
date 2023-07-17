@@ -166,7 +166,22 @@ export const loginLocal = async (req: Request, res: Response) => {
 /* <-- 로그아웃 --> */
 export const logout = (req: Request, res: Response) => {
   try {
-    req.cookies("accessToken", "");
+    res.cookie(
+      "accessToken",
+      {},
+      {
+        secure: false, // http: false, https: true
+        httpOnly: true,
+      }
+    );
+    res.cookie(
+      "refreshToken",
+      {},
+      {
+        secure: false, // http: false, https: true
+        httpOnly: true,
+      }
+    );
 
     return res.status(200).send({
       isSuccess: true,
