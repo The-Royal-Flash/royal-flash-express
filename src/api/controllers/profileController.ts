@@ -4,6 +4,7 @@ import { createAccessToken, createRefreshToken } from "../../utils/createJWT";
 import jwt, { JwtPayload } from "jsonwebtoken";
 import { changePathFormula } from "../../utils/utils";
 import fs from "fs";
+import bcrypt from "bcrypt";
 
 /* <-- Profile 정보 --> */
 export const getProfile = async (req: Request, res: Response) => {
@@ -291,6 +292,71 @@ export const uploadAvatar = async (req: Request, res: Response) => {
       isSuccess: true,
       message: "Modify Successful",
       avatarUrl: (req as any).user.avatarUrl,
+    });
+  } catch (error) {
+    if (error instanceof Error) {
+      return res.status(500).send({
+        isSuccess: false,
+        message: error.message,
+      });
+    } else {
+      return res.status(500).send({
+        isSuccess: false,
+        message: String(error),
+      });
+    }
+  }
+};
+
+/* <-- 비밀번호 변경 --> */
+export const editPassword = async (req: Request, res: Response) => {
+  const { password, newPassword, newConfirmPassword } = req.body;
+
+  try {
+    const { id } = (req as any).user;
+    if (!(req as any).user) {
+      return res.status(401).send({
+        isSuccess: false,
+        message: "Not Authorized",
+      });
+    }
+
+    // 새 비밀번호와 새 비밀번호 확인 불일치일 경우
+    if (newPassword !== newConfirmPassword) {
+      return res.status(400).send({
+        isSuccess: false,
+        message: "New password mismatch",
+      });
+    }
+
+    // DB에서 기존 유저 정보 가져오기
+    const user = await User.findById(id);
+    if (!user) {
+      return res.status(400).send({
+        isSuccess: false,
+        message: "User not found",
+      });
+    }
+
+    // 기존 비밀번호 비교
+    const pass = await bcrypt.compare(password, user.password);
+
+    // 기존 비밀번호 불일치일 경우
+    if (!pass) {
+      return res.status(400).send({
+        isSuccess: false,
+        message: "The wrong password",
+      });
+    }
+
+    // 비밀번호 저장
+    user.password = newPassword;
+    await user.save();
+
+    // 정보수정 성공 반환
+    return res.status(200).send({
+      isSuccess: true,
+      message: "Modify successful",
     });
   } catch (error) {
     if (error instanceof Error) {

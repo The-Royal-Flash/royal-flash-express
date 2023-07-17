@@ -2,6 +2,7 @@ import express, { Router } from "express";
 import {
   editName,
   editNickname,
+  editPassword,
   getProfile,
   uploadAvatar,
 } from "../controllers/profileController";
@@ -14,6 +15,7 @@ const profile: Router = express.Router();
 profile.route("/").get(getProfile);
 profile.route("/edit/name").post(editName);
 profile.route("/edit/nickname").post(editNickname);
+profile.route("/edit/password").post(editPassword);
 profile
   .route("/edit/avatar")
   .post(uploadAvatarMiddleware.single("image"), uploadAvatar);
