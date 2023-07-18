@@ -1,6 +1,9 @@
 import { Request, Response } from "express";
 import Quizlet from "../../models/Quizlet";
 import QuestionCard from "../../models/QuestionCard";
+import User from "../../models/User";
+import StudyLog from "../../models/StudyLog";
+import mongoose from "mongoose";
 
 /* <-- 학습세트 생성 --> */
 export const createQuizlet = async (req: Request, res: Response) => {
@@ -233,6 +236,47 @@ export const editQuizlet = async (req: Request, res: Response) => {
     return res.status(200).send({
       isSuccess: true,
       message: "학습세트 수정 성공",
+    });
+  } catch (error) {
+    console.log(`Error: ${error}`);
+    return res.status(500).send({
+      isSuccess: false,
+      message: "예상치 못한 오류 발생",
+      error: error instanceof Error ? error.message : String(error),
+    });
+  }
+};
+
+/* <-- 학습세트 상세 --> */
+export const detailQuizlet = async (req: Request, res: Response) => {
+  const { quizletId } = req.params;
+
+  try {
+    // DB에서 학습세트 조회
+    const quizlet = await Quizlet.findById(quizletId).populate(
+      "questionCardList"
+    );
+
+    // 학습세트 조회가 안되는 경우
+    if (!quizlet) {
+      return res.status(400).send({
+        isSuccess: false,
+        message: "학습세트를 찾을 수 없습니다",
+      });
+    }
+
+    // 학습세트 정보 반환
+    const { title, description, tagList, questionCardList } = quizlet;
+
+    return res.status(200).send({
+      isSuccess: true,
+      message: "학습세트 조회 성공",
+      quizlet: {
+        title,
+        description,
+        tagList,
+        questionCardList,
+      },
     });
   } catch (error) {
     console.log(`Error: ${error}`);
