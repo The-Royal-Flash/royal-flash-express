@@ -13,37 +13,32 @@ export const getProfile = async (req: Request, res: Response) => {
     if (!user) {
       return res.status(401).send({
         isSuccess: false,
-        message: "Not Authorized",
+        message: "로그인된 사용자만 접근 가능",
       });
     }
 
-    const info = await User.findById(user.id);
+    const info = await User.findOne({ _id: user.id });
     if (!info) {
-      return res.status(400).send({
+      return res.status(404).send({
         isSuccess: false,
-        message: "User not found",
+        message: "사용자 정보를 찾을 수 없습니다",
       });
     }
     return res.status(200).send({
       isSuccess: true,
-      info,
+      user: info,
     });
   } catch (error) {
-    if (error instanceof Error) {
-      return res.status(500).send({
-        isSuccess: false,
-        message: error.message,
-      });
-    } else {
-      return res.status(500).send({
-        isSuccess: false,
-        message: String(error),
-      });
-    }
+    console.log(`Error: ${error}`);
+    return res.status(500).send({
+      isSuccess: false,
+      message: "예상치 못한 오류 발생",
+      error: error instanceof Error ? error.message : String(error),
+    });
   }
 };
 
-/* <-- 이름 수정 --> */
+/* <-- 이름 변경 --> */
 export const editName = async (req: Request, res: Response) => {
   const { name } = req.body;
 
@@ -52,7 +47,7 @@ export const editName = async (req: Request, res: Response) => {
     if (!user) {
       return res.status(401).send({
         isSuccess: false,
-        message: "Not Authorized",
+        message: "로그인된 사용자만 접근 가능",
       });
     }
 
@@ -67,7 +62,7 @@ export const editName = async (req: Request, res: Response) => {
     if (!updatedInfo) {
       return res.status(400).send({
         isSuccess: false,
-        message: "User not found",
+        message: "사용자를 찾을 수 없거나 정보 업데이트시 오류 발생",
       });
     }
 
@@ -78,7 +73,6 @@ export const editName = async (req: Request, res: Response) => {
       name: updatedInfo.name,
       nickname: updatedInfo.nickname,
       avatarUrl: updatedInfo.avatarUrl,
-      // studyLog: user.studyLog,
     });
 
     // Refresh Token 재발행
@@ -88,7 +82,6 @@ export const editName = async (req: Request, res: Response) => {
       name: updatedInfo.name,
       nickname: updatedInfo.nickname,
       avatarUrl: updatedInfo.avatarUrl,
-      // studyLog: user.studyLog,
     });
 
     // Token 재전송
@@ -107,24 +100,19 @@ export const editName = async (req: Request, res: Response) => {
     // 정보수정 성공 반환
     return res.status(200).send({
       isSuccess: true,
-      message: "Modify Successful",
+      message: "이름 변경 성공",
     });
   } catch (error) {
-    if (error instanceof Error) {
-      return res.status(500).send({
-        isSuccess: false,
-        message: error.message,
-      });
-    } else {
-      return res.status(500).send({
-        isSuccess: false,
-        message: String(error),
-      });
-    }
+    console.log(`Error: ${error}`);
+    return res.status(500).send({
+      isSuccess: false,
+      message: "예상치 못한 오류 발생",
+      error: error instanceof Error ? error.message : String(error),
+    });
   }
 };
 
-/* <-- 닉네임 수정 --> */
+/* <-- 닉네임 변경 --> */
 export const editNickname = async (req: Request, res: Response) => {
   const { nickname } = req.body;
 
@@ -133,16 +121,16 @@ export const editNickname = async (req: Request, res: Response) => {
     if (!user) {
       return res.status(401).send({
         isSuccess: false,
-        message: "Not Authorized",
+        message: "로그인된 사용자만 접근 가능",
       });
     }
 
     // 닉네임 중복 확인
-    const isNickname = await User.findOne({ nickname });
+    const isNickname = await User.exists({ nickname });
     if (isNickname) {
       return res.status(400).send({
         isSuccess: false,
-        message: "Duplicate Nickname",
+        message: "이미 사용중인 닉네임",
       });
     }
 
@@ -157,7 +145,7 @@ export const editNickname = async (req: Request, res: Response) => {
     if (!updatedInfo) {
       return res.status(400).send({
         isSuccess: false,
-        message: "User not found",
+        message: "사용자를 찾을 수 없거나 정보 업데이트시 오류 발생",
       });
     }
 
@@ -168,7 +156,6 @@ export const editNickname = async (req: Request, res: Response) => {
       name: updatedInfo.name,
       nickname: updatedInfo.nickname,
       avatarUrl: updatedInfo.avatarUrl,
-      // studyLog: user.studyLog,
     });
 
     // Refresh Token 재발행
@@ -178,7 +165,6 @@ export const editNickname = async (req: Request, res: Response) => {
       name: updatedInfo.name,
       nickname: updatedInfo.nickname,
       avatarUrl: updatedInfo.avatarUrl,
-      // studyLog: user.studyLog,
     });
 
     // Token 재전송
@@ -197,20 +183,15 @@ export const editNickname = async (req: Request, res: Response) => {
     // 정보수정 성공 반환
     return res.status(200).send({
       isSuccess: true,
-      message: "Modify Successful",
+      message: "닉네임 변경 성공",
     });
   } catch (error) {
-    if (error instanceof Error) {
-      return res.status(500).send({
-        isSuccess: false,
-        message: error.message,
-      });
-    } else {
-      return res.status(500).send({
-        isSuccess: false,
-        message: String(error),
-      });
-    }
+    console.log(`Error: ${error}`);
+    return res.status(500).send({
+      isSuccess: false,
+      message: "예상치 못한 오류 발생",
+      error: error instanceof Error ? error.message : String(error),
+    });
   }
 };
 
@@ -223,7 +204,7 @@ export const uploadAvatar = async (req: Request, res: Response) => {
     if (!user) {
       return res.status(401).send({
         isSuccess: false,
-        message: "Not Authorized",
+        message: "로그인된 사용자만 접근 가능",
       });
     }
 
@@ -238,7 +219,7 @@ export const uploadAvatar = async (req: Request, res: Response) => {
     if (!updatedInfo) {
       return res.status(400).send({
         isSuccess: false,
-        message: "User not found",
+        message: "사용자를 찾을 수 없거나 정보 업데이트시 오류 발생",
       });
     }
 
@@ -248,7 +229,7 @@ export const uploadAvatar = async (req: Request, res: Response) => {
         if (error) {
           return res.status(500).send({
             isSuccess: false,
-            message: "Server Error",
+            message: "서버 처리 에러",
           });
         }
       });
@@ -261,7 +242,6 @@ export const uploadAvatar = async (req: Request, res: Response) => {
       name: updatedInfo.name,
       nickname: updatedInfo.nickname,
       avatarUrl: updatedInfo.avatarUrl,
-      // studyLog: user.studyLog,
     });
 
     // Refresh Token 재발행
@@ -271,7 +251,6 @@ export const uploadAvatar = async (req: Request, res: Response) => {
       name: updatedInfo.name,
       nickname: updatedInfo.nickname,
       avatarUrl: updatedInfo.avatarUrl,
-      // studyLog: user.studyLog,
     });
 
     // Token 재전송
@@ -290,21 +269,16 @@ export const uploadAvatar = async (req: Request, res: Response) => {
     // 정보수정 성공 반환
     return res.status(200).send({
       isSuccess: true,
-      message: "Modify Successful",
+      message: "아바타 변경 성공",
       avatarUrl: (req as any).user.avatarUrl,
     });
   } catch (error) {
-    if (error instanceof Error) {
-      return res.status(500).send({
-        isSuccess: false,
-        message: error.message,
-      });
-    } else {
-      return res.status(500).send({
-        isSuccess: false,
-        message: String(error),
-      });
-    }
+    console.log(`Error: ${error}`);
+    return res.status(500).send({
+      isSuccess: false,
+      message: "예상치 못한 오류 발생",
+      error: error instanceof Error ? error.message : String(error),
+    });
   }
 };
 
@@ -317,7 +291,7 @@ export const editPassword = async (req: Request, res: Response) => {
     if (!(req as any).user) {
       return res.status(401).send({
         isSuccess: false,
-        message: "Not Authorized",
+        message: "로그인된 사용자만 접근 가능",
       });
     }
 
@@ -325,7 +299,7 @@ export const editPassword = async (req: Request, res: Response) => {
     if (newPassword !== newConfirmPassword) {
       return res.status(400).send({
         isSuccess: false,
-        message: "New password mismatch",
+        message: "새 비밀번호 확인 불일치",
       });
     }
 
@@ -334,7 +308,7 @@ export const editPassword = async (req: Request, res: Response) => {
     if (!user) {
       return res.status(400).send({
         isSuccess: false,
-        message: "User not found",
+        message: "사용자를 찾을 수 없습니다",
       });
     }
 
@@ -345,7 +319,7 @@ export const editPassword = async (req: Request, res: Response) => {
     if (!pass) {
       return res.status(400).send({
         isSuccess: false,
-        message: "The wrong password",
+        message: "현재 비밀번호를 잘못 입력하셨습니다",
       });
     }
 
@@ -356,19 +330,14 @@ export const editPassword = async (req: Request, res: Response) => {
     // 정보수정 성공 반환
     return res.status(200).send({
       isSuccess: true,
-      message: "Modify successful",
+      message: "비밀번호 변경 성공",
     });
   } catch (error) {
-    if (error instanceof Error) {
-      return res.status(500).send({
-        isSuccess: false,
-        message: error.message,
-      });
-    } else {
-      return res.status(500).send({
-        isSuccess: false,
-        message: String(error),
-      });
-    }
+    console.log(`Error: ${error}`);
+    return res.status(500).send({
+      isSuccess: false,
+      message: "예상치 못한 오류 발생",
+      error: error instanceof Error ? error.message : String(error),
+    });
   }
 };
