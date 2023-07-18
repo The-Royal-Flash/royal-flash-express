@@ -1,4 +1,4 @@
-import { NextFunction, Request, Response } from "express";
+import { Request, Response } from "express";
 import User from "../../models/User";
 import bcrypt from "bcrypt";
 import { createAccessToken, createRefreshToken } from "../../utils/createJWT";
@@ -10,10 +10,16 @@ export const localRegester = async (req: Request, res: Response) => {
 
   try {
     if (password !== confirmPassword) {
-      throw new Error("Password mismatch");
+      return res.status(400).send({
+        isSuccess: false,
+        message: "비밀번호 확인 불일치",
+      });
     }
     if (exists) {
-      throw new Error("Duplicate email or nickname");
+      return res.status(400).send({
+        isSuccess: false,
+        message: "이미 사용중인 이메일 또는 닉네임",
+      });
     }
 
     await User.create({
@@ -25,20 +31,15 @@ export const localRegester = async (req: Request, res: Response) => {
 
     return res.status(200).send({
       isSuccess: true,
-      message: "Sign-up Successful",
+      message: "회원가입 성공",
     });
   } catch (error) {
-    if (error instanceof Error) {
-      return res.status(400).send({
-        isSuccess: false,
-        message: error.message,
-      });
-    } else {
-      return res.status(400).send({
-        isSuccess: false,
-        message: String(error),
-      });
-    }
+    console.log(`Error: ${error}`);
+    return res.status(500).send({
+      isSuccess: false,
+      message: "예상치 못한 오류 발생",
+      error: error instanceof Error ? error.message : String(error),
+    });
   }
 };
 
@@ -49,24 +50,22 @@ export const checkEmail = async (req: Request, res: Response) => {
 
   try {
     if (exists) {
-      throw new Error("Duplicate Email");
+      return res.status(400).send({
+        isSuccess: false,
+        message: "이미 사용중인 이메일",
+      });
     }
     return res.status(200).send({
       isSuccess: true,
-      message: "Available Email",
+      message: "사용 가능한 이메일",
     });
   } catch (error) {
-    if (error instanceof Error) {
-      return res.status(400).send({
-        isSuccess: false,
-        message: error.message,
-      });
-    } else {
-      return res.status(400).send({
-        isSuccess: false,
-        message: String(error),
-      });
-    }
+    console.log(`Error: ${error}`);
+    return res.status(500).send({
+      isSuccess: false,
+      message: "예상치 못한 오류 발생",
+      error: error instanceof Error ? error.message : String(error),
+    });
   }
 };
 
@@ -77,24 +76,22 @@ export const checkNickname = async (req: Request, res: Response) => {
 
   try {
     if (exists) {
-      throw new Error("Duplicate Nickname");
+      return res.status(400).send({
+        isSuccess: true,
+        message: "이미 사용중인 닉네임",
+      });
     }
     return res.status(200).send({
       isSuccess: true,
-      message: "Available Nickname",
+      message: "사용 가능한 닉네임",
     });
   } catch (error) {
-    if (error instanceof Error) {
-      return res.status(400).send({
-        isSuccess: false,
-        message: error.message,
-      });
-    } else {
-      return res.status(400).send({
-        isSuccess: false,
-        message: String(error),
-      });
-    }
+    console.log(`Error: ${error}`);
+    return res.status(500).send({
+      isSuccess: false,
+      message: "예상치 못한 오류 발생",
+      error: error instanceof Error ? error.message : String(error),
+    });
   }
 };
 
@@ -105,11 +102,17 @@ export const loginLocal = async (req: Request, res: Response) => {
 
   try {
     if (!user) {
-      throw new Error("Email is not queried");
+      return res.status(403).send({
+        isSuccess: false,
+        message: "올바른 아이디와 비밀번호를 입력해주세요",
+      });
     } else {
       const pass = await bcrypt.compare(password, user.password);
       if (!pass) {
-        throw new Error("Email or password is invalid");
+        return res.status(403).send({
+          isSuccess: false,
+          message: "올바른 아이디와 비밀번호를 입력해주세요",
+        });
       }
 
       // Access Token 발급
@@ -119,7 +122,6 @@ export const loginLocal = async (req: Request, res: Response) => {
         name: user.name,
         nickname: user.nickname,
         avatarUrl: user.avatarUrl,
-        // studyLog: user.studyLog,
       });
 
       // Refresh Token 발급
@@ -129,7 +131,6 @@ export const loginLocal = async (req: Request, res: Response) => {
         name: user.name,
         nickname: user.nickname,
         avatarUrl: user.avatarUrl,
-        // studyLog: user.studyLog,
       });
 
       // Token 전송
@@ -143,61 +144,43 @@ export const loginLocal = async (req: Request, res: Response) => {
       });
 
       // 로그인 성공 반환
-      res.status(200).json({
+      return res.status(200).send({
         isSuccess: true,
-        message: "Sign-in Successful",
+        message: "로그인 성공",
       });
     }
   } catch (error) {
-    if (error instanceof Error) {
-      return res.status(403).send({
-        isSuccess: false,
-        message: error.message,
-      });
-    } else {
-      return res.status(403).send({
-        isSuccess: false,
-        message: String(error),
-      });
-    }
+    console.log(`Error: ${error}`);
+    return res.status(500).send({
+      isSuccess: false,
+      message: "예상치 못한 오류 발생",
+      error: error instanceof Error ? error.message : String(error),
+    });
   }
 };
 
 /* <-- 로그아웃 --> */
 export const logout = (req: Request, res: Response) => {
   try {
-    res.cookie(
-      "accessToken",
-      {},
-      {
-        secure: false, // http: false, https: true
-        httpOnly: true,
-      }
-    );
-    res.cookie(
-      "refreshToken",
-      {},
-      {
-        secure: false, // http: false, https: true
-        httpOnly: true,
-      }
-    );
+    const cookieOptions = {
+      secure: false, // http: false, https: true
+      httpOnly: true,
+      expires: new Date(0), // 쿠키 무효화
+    };
+
+    res.cookie("accessToken", "", cookieOptions);
+    res.cookie("refreshToken", "", cookieOptions);
 
     return res.status(200).send({
       isSuccess: true,
-      message: "Logout Successful",
+      message: "로그아웃 성공",
     });
   } catch (error) {
-    if (error instanceof Error) {
-      return res.status(500).send({
-        isSuccess: false,
-        message: error.message,
-      });
-    } else {
-      return res.status(500).send({
-        isSuccess: false,
-        message: String(error),
-      });
-    }
+    console.log(`Error: ${error}`);
+    return res.status(500).send({
+      isSuccess: false,
+      message: "예상치 못한 오류 발생",
+      error: error instanceof Error ? error.message : String(error),
+    });
   }
 };
