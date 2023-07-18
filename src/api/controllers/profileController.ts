@@ -24,9 +24,17 @@ export const getProfile = async (req: Request, res: Response) => {
         message: "사용자 정보를 찾을 수 없습니다",
       });
     }
+    const { _id, email, name, nickname, avatarUrl, studyLog } = info;
     return res.status(200).send({
       isSuccess: true,
-      user: info,
+      user: {
+        _id,
+        email,
+        name,
+        nickname,
+        avatarUrl,
+        studyLog,
+      },
     });
   } catch (error) {
     console.log(`Error: ${error}`);
@@ -197,7 +205,7 @@ export const editNickname = async (req: Request, res: Response) => {
 
 /* <-- Avatar 업로드 --> */
 export const uploadAvatar = async (req: Request, res: Response) => {
-  const file = req.file;
+  const image = req.file;
 
   try {
     const user = (req as any).user;
@@ -211,7 +219,7 @@ export const uploadAvatar = async (req: Request, res: Response) => {
     // DB에 변경된 Avatar URL 저장
     const updatedInfo = await User.findByIdAndUpdate(
       user.id,
-      { avatarUrl: file ? changePathFormula(file.path) : user.avatarUrl },
+      { avatarUrl: image ? changePathFormula(image.path) : user.avatarUrl },
       { new: true }
     );
 
