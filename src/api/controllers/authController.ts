@@ -119,7 +119,6 @@ export const loginLocal = async (req: Request, res: Response) => {
         name: user.name,
         nickname: user.nickname,
         avatarUrl: user.avatarUrl,
-        // studyLog: user.studyLog,
       });
 
       // Refresh Token 발급
@@ -129,7 +128,6 @@ export const loginLocal = async (req: Request, res: Response) => {
         name: user.name,
         nickname: user.nickname,
         avatarUrl: user.avatarUrl,
-        // studyLog: user.studyLog,
       });
 
       // Token 전송
