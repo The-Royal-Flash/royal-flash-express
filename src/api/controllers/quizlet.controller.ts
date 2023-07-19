@@ -1,9 +1,6 @@
 import { Request, Response } from "express";
 import Quizlet from "../../models/Quizlet";
 import QuestionCard from "../../models/QuestionCard";
-import User from "../../models/User";
-import StudyLog from "../../models/StudyLog";
-import mongoose from "mongoose";
 
 /* <-- 학습세트 생성 --> */
 export const createQuizlet = async (req: Request, res: Response) => {
@@ -74,6 +71,7 @@ export const createQuizlet = async (req: Request, res: Response) => {
     return res.status(200).send({
       isSuccess: true,
       message: "학습세트 생성 성공",
+      newQuizletId: quizlet._id,
     });
   } catch (error) {
     console.log(`Error: ${error}`);
