@@ -1,6 +1,7 @@
 import { Request, Response } from "express";
 import Quizlet from "../../models/Quizlet";
 import QuestionCard from "../../models/QuestionCard";
+import User from "../../models/User";
 
 /* <-- 학습세트 생성 --> */
 export const createQuizlet = async (req: Request, res: Response) => {
@@ -245,7 +246,7 @@ export const editQuizlet = async (req: Request, res: Response) => {
   }
 };
 
-/* <-- 학습세트 상세 --> */
+/* <-- 학습세트 정보 --> */
 export const quizletInfo = async (req: Request, res: Response) => {
   const { quizletId } = req.params;
 
@@ -276,6 +277,62 @@ export const quizletInfo = async (req: Request, res: Response) => {
         questionCardList,
       },
     });
+  } catch (error) {
+    console.log(`Error: ${error}`);
+    return res.status(500).send({
+      isSuccess: false,
+      message: "예상치 못한 오류 발생",
+      error: error instanceof Error ? error.message : String(error),
+    });
+  }
+};
+
+/* <-- 학습세트 상세 --> */
+export const quizletDetail = async (req: Request, res: Response) => {
+  const user = (req as any).user;
+  const { quizletId } = req.params;
+
+  // 로그인 하지 않은 경우
+  try {
+    // 학습세트 조회
+    const quizlet = await Quizlet.findById(quizletId)
+      .populate({
+        path: "questionCardList",
+        select: "question",
+      })
+      .populate({
+        path: "owner",
+        select: "name nickname email avatarUrl",
+      });
+
+    // 학습세트가 조회되지 않을 경우
+    if (!quizlet) {
+      return res.status(400).send({
+        isSuccess: false,
+        message: "학습세트를 찾을 수 없습니다",
+      });
+    }
+
+    // 로그인 되지 않은 경우
+    if (!user) {
+      // 학습세트 정보 반환
+      return res.status(200).send({
+        isSuccess: true,
+        quizlet,
+        message: "학습세트 정보 조회 성공",
+      });
+    } else {
+      // 로그인한 경우
+      const userInfo = await User.findById(user.id);
+
+      // 사용자 정보가 조회되지 않는 경우
+      if (!userInfo) {
+        return res.status(400).send({
+          isSuccess: false,
+          message: "사용자를 찾을 수 없습니다",
+        });
+      }
+    }
   } catch (error) {
     console.log(`Error: ${error}`);
     return res.status(500).send({

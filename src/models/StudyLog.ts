@@ -1,6 +1,6 @@
 import mongoose, { Types } from "mongoose";
 
-interface IStudyLog {
+export interface IStudyLog {
   wrongList: Types.ObjectId[];
   correctList: Types.ObjectId[];
   createAt: Date;

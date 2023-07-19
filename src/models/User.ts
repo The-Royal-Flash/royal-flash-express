@@ -1,13 +1,14 @@
 import mongoose, { Types } from "mongoose";
 import bcrypt from "bcrypt";
+import { IStudyLog } from "./StudyLog";
 
-interface IUser {
+export interface IUser {
   email: string;
   name: string;
   nickname: string;
   password: string;
   avatarUrl: string;
-  studyLog: Types.ObjectId[];
+  studyLog: Types.Array<IStudyLog>;
 }
 
 const userSchema = new mongoose.Schema<IUser>({
@@ -16,7 +17,9 @@ const userSchema = new mongoose.Schema<IUser>({
   nickname: { type: String, required: true, unique: true },
   password: { type: String, required: true },
   avatarUrl: { type: String, default: "" },
-  studyLog: [{ type: mongoose.Schema.Types.ObjectId, ref: "StudyLog" }],
+  studyLog: [
+    { type: mongoose.Schema.Types.ObjectId, ref: "StudyLog", default: [] },
+  ],
 });
 
 // Schema 저장시 비밀번호 암호화
