@@ -246,7 +246,7 @@ export const editQuizlet = async (req: Request, res: Response) => {
 };
 
 /* <-- 학습세트 상세 --> */
-export const detailQuizlet = async (req: Request, res: Response) => {
+export const quizletInfo = async (req: Request, res: Response) => {
   const { quizletId } = req.params;
 
   try {

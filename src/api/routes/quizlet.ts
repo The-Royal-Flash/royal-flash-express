@@ -2,15 +2,15 @@ import express, { Router } from "express";
 import {
   createQuizlet,
   deleteQuizlet,
-  detailQuizlet,
+  quizletInfo,
   editQuizlet,
-} from "../controllers/quizlet.controller";
+} from "../controllers/quizletController";
 import authTokenMiddleware from "../../middlewares/authTokenMiddleware";
 
 const quizlet: Router = express.Router();
 
 quizlet.route("/create").all(authTokenMiddleware).post(createQuizlet);
-quizlet.route("/detail/:quizletId([0-9a-f]{24})").get(detailQuizlet);
+quizlet.route("/info/:quizletId([0-9a-f]{24})").get(quizletInfo);
 quizlet
   .route("/edit/:quizletId([0-9a-f]{24})")
   .all(authTokenMiddleware)
