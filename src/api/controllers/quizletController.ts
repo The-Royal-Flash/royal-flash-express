@@ -2,6 +2,9 @@ import { Request, Response } from "express";
 import Quizlet from "../../models/Quizlet";
 import QuestionCard from "../../models/QuestionCard";
 import User from "../../models/User";
+import jwt from "jsonwebtoken";
+import StudyLog from "../../models/StudyLog";
+import mongoose, { Types } from "mongoose";
 
 /* <-- 학습세트 생성 --> */
 export const createQuizlet = async (req: Request, res: Response) => {
@@ -160,7 +163,7 @@ export const editQuizlet = async (req: Request, res: Response) => {
     tagList,
     description,
     questionListToRemove,
-    questionCardsToAdd,
+    questionCardListToAdd,
   } = req.body;
 
   try {
@@ -208,7 +211,7 @@ export const editQuizlet = async (req: Request, res: Response) => {
 
     // 추가 학습카드 생성
     const newQuestionCards = await Promise.all(
-      questionCardsToAdd.map(async (questionCard: any) => {
+      questionCardListToAdd.map(async (questionCard: any) => {
         const newQuestionCard = await QuestionCard.create({
           question: questionCard.question,
           answer: questionCard.answer,
@@ -289,10 +292,23 @@ export const quizletInfo = async (req: Request, res: Response) => {
 
 /* <-- 학습세트 상세 --> */
 export const quizletDetail = async (req: Request, res: Response) => {
-  const user = (req as any).user;
   const { quizletId } = req.params;
 
-  // 로그인 하지 않은 경우
+  // 로그인 여부 판단 (authTokenMiddleware를 거치지 않는 라우팅이기 때문에 판단)
+  const accessToken = req.cookies.accessToken;
+  if (accessToken) {
+    jwt.verify(
+      accessToken,
+      process.env.ACCESS_SECRET as string,
+      { complete: true },
+      (error: jwt.VerifyErrors | null, decoded: any) => {
+        if (!error) {
+          (req as any).user = decoded.payload;
+        }
+      }
+    );
+  }
+
   try {
     // 학습세트 조회
     const quizlet = await Quizlet.findById(quizletId)
@@ -313,17 +329,32 @@ export const quizletDetail = async (req: Request, res: Response) => {
       });
     }
 
+    // 로그인된 사용자 여부 확인
+    const user = (req as any).user;
+    console.log(user);
     // 로그인 되지 않은 경우
     if (!user) {
       // 학습세트 정보 반환
       return res.status(200).send({
         isSuccess: true,
         quizlet,
-        message: "학습세트 정보 조회 성공",
       });
     } else {
+      // const mock = await StudyLog.create({
+      //   wrongList: ["64b941eee28d72c2a3fa2f9d", "64b941eee28d72c2a3fa2f9e"],
+      //   correctList: ["64b941eee28d72c2a3fa2f9f", "64b941eee28d72c2a3fa2fa0"],
+      //   about: quizlet._id,
+      // });
+
+      // const mockuser = await User.findById(user.id);
+      // if (mockuser) {
+      //   mockuser.studyLog = [mock._id];
+      //   mockuser.save();
+      // }
+
       // 로그인한 경우
-      const userInfo = await User.findById(user.id);
+      // 로그인한 사용자 정보 조회
+      const userInfo: any = await User.findById(user.id).populate("studyLog");
 
       // 사용자 정보가 조회되지 않는 경우
       if (!userInfo) {
@@ -332,7 +363,117 @@ export const quizletDetail = async (req: Request, res: Response) => {
           message: "사용자를 찾을 수 없습니다",
         });
       }
+
+      console.log(userInfo);
+
+      // 사용자의 학습기록에 현재 학습세트 존재여부 확인
+      const isStudyLog = userInfo.studyLog.find(
+        (value: any) => value.about === quizlet._id
+      );
+
+      console.log(isStudyLog);
+
+      // 현재 학습세트가 존재하지 않는 경우
+      if (!isStudyLog) {
+        return res.status(200).send({
+          isSuccess: true,
+          quizlet,
+        });
+      }
+
+      // 존재하는 경우
+      return res.status(200).send({
+        isSuccess: true,
+        quizlet,
+        studyLog: {
+          studyCount: isStudyLog.views,
+          numOfQuestion: quizlet.questionCardList.length,
+          numOfQuestionsToReview: isStudyLog.wrongList.length,
+          lastQuizDate: isStudyLog.updateAt,
+        },
+      });
     }
+  } catch (error) {
+    console.log(`Error: ${error}`);
+    return res.status(500).send({
+      isSuccess: false,
+      message: "예상치 못한 오류 발생",
+      error: error instanceof Error ? error.message : String(error),
+    });
+  }
+};
+
+/* <-- 모든 학습세트 태그목록 --> */
+export const allTagList = async (req: Request, res: Response) => {
+  try {
+    // 모든 학습세트의 태그목록을 조회
+    const tagList = await Quizlet.distinct("tagList");
+
+    // 태그목록이 조회되지 않는 경우
+    if (!tagList) {
+      return res.status(400).send({
+        isSuccess: false,
+        message: "태그 목록 조회 실패",
+      });
+    }
+
+    // 태그목록 조회 성공 반환
+    return res.status(200).send({
+      isSuccess: true,
+      message: "학습세트의 모든 태그목록 조회 성공",
+      tagList,
+    });
+  } catch (error) {
+    console.log(`Error: ${error}`);
+    return res.status(500).send({
+      isSuccess: false,
+      message: "예상치 못한 오류 발생",
+      error: error instanceof Error ? error.message : String(error),
+    });
+  }
+};
+
+/* <-- 나의 학습세트 태그목록 --> */
+export const myTagList = async (req: Request, res: Response) => {
+  const { id } = (req as any).user;
+
+  try {
+    // 로그인 여부 확인
+    if (!id) {
+      return res.status(401).send({
+        isSuccess: false,
+        message: "로그인된 사용자만 접근 가능",
+      });
+    }
+
+    // 로그인한 사용자의 학습기록 조회
+    const user: any = await User.findById(id).populate({
+      path: "studyLog",
+      populate: {
+        path: "about",
+        model: "Quizlet",
+        select: "tagList",
+      },
+    });
+
+    // 사용자가 조회되지 않는 경우
+    if (!user) {
+      return res.status(401).send({
+        isSuccess: false,
+        message: "사용자 정보를 찾을 수 없습니다",
+      });
+    }
+
+    // 로그인한 사용자의 학습세트의 태그목록 추출
+    const tagList = [
+      ...new Set(user.studyLog.map((log: any) => log.about.tagList).flat()),
+    ];
+
+    return res.status(200).send({
+      isSuccess: true,
+      message: "사용자의 모든 학습세트 태그목록 조회 성공",
+      tagList,
+    });
   } catch (error) {
     console.log(`Error: ${error}`);
     return res.status(500).send({

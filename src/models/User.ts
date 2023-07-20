@@ -1,6 +1,5 @@
 import mongoose, { Types } from "mongoose";
 import bcrypt from "bcrypt";
-import { IStudyLog } from "./StudyLog";
 
 export interface IUser {
   email: string;
@@ -8,7 +7,7 @@ export interface IUser {
   nickname: string;
   password: string;
   avatarUrl: string;
-  studyLog: Types.Array<IStudyLog>;
+  studyLog: Types.ObjectId[];
 }
 
 const userSchema = new mongoose.Schema<IUser>({
