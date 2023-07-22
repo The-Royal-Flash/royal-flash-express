@@ -4,7 +4,6 @@ import QuestionCard from "../../models/QuestionCard";
 import User from "../../models/User";
 import jwt from "jsonwebtoken";
 import StudyLog from "../../models/StudyLog";
-import mongoose, { Types } from "mongoose";
 
 /* <-- 학습세트 생성 --> */
 export const createQuizlet = async (req: Request, res: Response) => {
@@ -340,18 +339,6 @@ export const quizletDetail = async (req: Request, res: Response) => {
         quizlet,
       });
     } else {
-      // const mock = await StudyLog.create({
-      //   wrongList: ["64b941eee28d72c2a3fa2f9d", "64b941eee28d72c2a3fa2f9e"],
-      //   correctList: ["64b941eee28d72c2a3fa2f9f", "64b941eee28d72c2a3fa2fa0"],
-      //   about: quizlet._id,
-      // });
-
-      // const mockuser = await User.findById(user.id);
-      // if (mockuser) {
-      //   mockuser.studyLog = [mock._id];
-      //   mockuser.save();
-      // }
-
       // 로그인한 경우
       // 로그인한 사용자 정보 조회
       const userInfo: any = await User.findById(user.id).populate("studyLog");
@@ -475,6 +462,82 @@ export const myTagList = async (req: Request, res: Response) => {
       tagList,
     });
   } catch (error) {
+    console.log(`Error: ${error}`);
+    return res.status(500).send({
+      isSuccess: false,
+      message: "예상치 못한 오류 발생",
+      error: error instanceof Error ? error.message : String(error),
+    });
+  }
+};
+
+/* <-- 학습정보 제출 --> */
+export const postStudy = async (req: Request, res: Response) => {
+  try {
+    const { id } = (req as any).user;
+    const { quizletId } = req.params;
+    const { questionListToReview, questionToCorrectList } = req.body;
+
+    // 로그인 여부 확인
+    if (!id) {
+      return res.status(401).send({
+        isSuccess: false,
+        message: "로그인된 사용자만 접근 가능",
+      });
+    }
+
+    // 로그인한 사용자 정보 확인
+    const user: any = await User.findById(id).populate('studyLog');
+    if(!user) {
+      return res.status(400).send({
+        isSuccess: false,
+        message: '사용자를 찾을 수 없습니다'
+      });
+    }
+
+    // 이미 학습한 기록이 있는지 조회
+    const [ isStudyLog ] = user.studyLog.filter((study: any) => String(study.about) === String(quizletId));
+    
+    // 학습기록이 없는 경우
+    if(!isStudyLog) {
+      // 학습기록 저장
+      const newStudyLog = await StudyLog.create({
+        wrongList: questionListToReview,
+        correctList: questionToCorrectList,
+        about: quizletId
+      });
+      // 학습기록 생성 실패일 경우
+      if(!newStudyLog) {
+        return res.status(400).send({
+          isSuccess: false,
+          message: "학습기록 저장 실패",
+        });
+      }
+
+      // 사용자의 studyLog에 등록
+      user.studyLog.push(newStudyLog._id);
+      await user.save();
+
+      // 생성 성공 반환
+      return res.status(200).send({
+        isSuccess: true,
+        message: '학습기록 저장 성공'
+      });
+    } else {
+      // 기존 학습기록 업데이트
+      await StudyLog.findByIdAndUpdate(isStudyLog._id, {
+        wrongList: questionListToReview,
+        correctList: questionToCorrectList,
+        updateAt: Date.now(),
+      });
+
+      // 업데이트 성공 반환
+      return res.status(200).send({
+        isSuccess: true,
+        message: '학습기록 업데이트 성공'
+      })
+    }
+  } catch(error) {
     console.log(`Error: ${error}`);
     return res.status(500).send({
       isSuccess: false,
