@@ -7,6 +7,7 @@ import {
   quizletDetail,
   allTagList,
   myTagList,
+  postStudy,
 } from "../controllers/quizletController";
 import authTokenMiddleware from "../../middlewares/authTokenMiddleware";
 
@@ -19,11 +20,13 @@ quizlet
   .route("/edit/:quizletId([0-9a-f]{24})")
   .all(authTokenMiddleware)
   .post(editQuizlet);
+quizlet.route("/study/:quizletId([0-9a-f]{24})").all(authTokenMiddleware).post(postStudy);
 quizlet
   .route("/delete/:quizletId([0-9a-f]{24})")
   .all(authTokenMiddleware)
   .delete(deleteQuizlet);
 quizlet.route("/tag").get(allTagList);
 quizlet.route("/tag/mine").all(authTokenMiddleware).get(myTagList);
+
 
 export default quizlet;
