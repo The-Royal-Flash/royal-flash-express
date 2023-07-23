@@ -330,7 +330,7 @@ export const quizletDetail = async (req: Request, res: Response) => {
 
     // 로그인된 사용자 여부 확인
     const user = (req as any).user;
-    console.log(user);
+
     // 로그인 되지 않은 경우
     if (!user) {
       // 학습세트 정보 반환
@@ -354,7 +354,7 @@ export const quizletDetail = async (req: Request, res: Response) => {
       console.log(userInfo);
 
       // 사용자의 학습기록에 현재 학습세트 존재여부 확인
-      const isStudyLog = userInfo.studyLog.find(
+      const [isStudyLog] = userInfo.studyLog.filter(
         (value: any) => value.about === quizlet._id
       );
 
