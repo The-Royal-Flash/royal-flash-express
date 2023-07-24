@@ -10,8 +10,8 @@ import {
 const auth: Router = express.Router();
 
 auth.route("/register/local").post(localRegester);
-auth.route("/register/local/check-email").get(checkEmail);
-auth.route("/register/local/check-nickname").get(checkNickname);
+auth.route("/register/local/check-email").post(checkEmail);
+auth.route("/register/local/check-nickname").post(checkNickname);
 auth.route("/login/local").post(loginLocal);
 auth.route("/logout").post(logout);
 
