@@ -147,6 +147,13 @@ export const loginLocal = async (req: Request, res: Response) => {
       return res.status(200).send({
         isSuccess: true,
         message: "로그인 성공",
+        user: {
+          id: user._id,
+          email: user.email,
+          name: user.name,
+          nickname: user.nickname,
+          avatarUrl: user.avatarUrl
+        }
       });
     }
   } catch (error) {
