@@ -6,6 +6,7 @@ export interface IStudyLog {
   createAt: Date;
   updateAt: Date;
   about: Types.ObjectId;
+  views: Number;
 }
 
 const studyLogSchema = new mongoose.Schema<IStudyLog>({
@@ -14,6 +15,7 @@ const studyLogSchema = new mongoose.Schema<IStudyLog>({
   createAt: { type: Date, default: Date.now },
   updateAt: { type: Date, default: Date.now },
   about: { type: mongoose.Schema.Types.ObjectId, ref: "Quizlet" },
+  views: { type: Number, default: 1 }
 });
 
 const StudyLog = mongoose.model<IStudyLog>("StudyLog", studyLogSchema);
