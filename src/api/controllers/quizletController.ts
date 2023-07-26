@@ -476,7 +476,7 @@ export const postStudy = async (req: Request, res: Response) => {
   try {
     const { id } = (req as any).user;
     const { quizletId } = req.params;
-    const { questionListToReview, questionToCorrectList } = req.body;
+    const { questionListToReview, questionListToCorrect } = req.body;
 
     // 로그인 여부 확인
     if (!id) {
@@ -487,27 +487,29 @@ export const postStudy = async (req: Request, res: Response) => {
     }
 
     // 로그인한 사용자 정보 확인
-    const user: any = await User.findById(id).populate('studyLog');
-    if(!user) {
+    const user: any = await User.findById(id).populate("studyLog");
+    if (!user) {
       return res.status(400).send({
         isSuccess: false,
-        message: '사용자를 찾을 수 없습니다'
+        message: "사용자를 찾을 수 없습니다",
       });
     }
 
     // 이미 학습한 기록이 있는지 조회
-    const [ isStudyLog ] = user.studyLog.filter((study: any) => String(study.about) === String(quizletId));
-    
+    const [isStudyLog] = user.studyLog.filter(
+      (study: any) => String(study.about) === String(quizletId)
+    );
+
     // 학습기록이 없는 경우
-    if(!isStudyLog) {
+    if (!isStudyLog) {
       // 학습기록 저장
       const newStudyLog = await StudyLog.create({
         wrongList: questionListToReview,
-        correctList: questionToCorrectList,
-        about: quizletId
+        correctList: questionListToCorrect,
+        about: quizletId,
       });
       // 학습기록 생성 실패일 경우
-      if(!newStudyLog) {
+      if (!newStudyLog) {
         return res.status(400).send({
           isSuccess: false,
           message: "학습기록 저장 실패",
@@ -521,23 +523,26 @@ export const postStudy = async (req: Request, res: Response) => {
       // 생성 성공 반환
       return res.status(200).send({
         isSuccess: true,
-        message: '학습기록 저장 성공'
+        message: "학습기록 저장 성공",
       });
     } else {
       // 기존 학습기록 업데이트
-      await StudyLog.findByIdAndUpdate(isStudyLog._id, {
+      const updatedLog: any = await StudyLog.findByIdAndUpdate(isStudyLog._id, {
         wrongList: questionListToReview,
-        correctList: questionToCorrectList,
+        correctList: questionListToCorrect,
         updateAt: Date.now(),
       });
+
+      updatedLog.views += 1;
+      await updatedLog.save();
 
       // 업데이트 성공 반환
       return res.status(200).send({
         isSuccess: true,
-        message: '학습기록 업데이트 성공'
-      })
+        message: "학습기록 업데이트 성공",
+      });
     }
-  } catch(error) {
+  } catch (error) {
     console.log(`Error: ${error}`);
     return res.status(500).send({
       isSuccess: false,
