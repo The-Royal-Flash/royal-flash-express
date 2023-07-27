@@ -13,9 +13,7 @@ const studyLogSchema = new mongoose.Schema<IStudyLog>({
   wrongList: [{ type: mongoose.Schema.Types.ObjectId, ref: "QuestionCard" }],
   correctList: [{ type: mongoose.Schema.Types.ObjectId, ref: "QuestionCard" }],
   createAt: { type: Date, default: Date.now },
-  updateAt: { type: Date, default: Date.now },
   about: { type: mongoose.Schema.Types.ObjectId, ref: "Quizlet" },
-  views: { type: Number, default: 1 }
 });
 
 const StudyLog = mongoose.model<IStudyLog>("StudyLog", studyLogSchema);
