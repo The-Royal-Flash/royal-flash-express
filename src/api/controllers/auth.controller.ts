@@ -5,20 +5,20 @@ import { createAccessToken, createRefreshToken } from "../../utils/createJWT";
 
 /* <-- 회원가입 --> */
 export const localRegester = async (req: Request, res: Response) => {
-  const { email, name, nickname, password, confirmPassword } = req.body;
-  const exists = await User.exists({ $or: [{ email }, { nickname }] });
-
   try {
+    const { email, name, nickname, password, confirmPassword } = req.body;
+    const exists = await User.exists({ $or: [{ email }, { nickname }] });
+
     if (password !== confirmPassword) {
       return res.status(400).send({
         isSuccess: false,
-        message: "비밀번호 확인 불일치",
+        message: "비밀번호 확인이 일치하지 않습니다",
       });
     }
     if (exists) {
       return res.status(400).send({
         isSuccess: false,
-        message: "이미 사용중인 이메일 또는 닉네임",
+        message: "이미 사용중인 이메일 또는 닉네임입니다",
       });
     }
 
@@ -31,13 +31,13 @@ export const localRegester = async (req: Request, res: Response) => {
 
     return res.status(200).send({
       isSuccess: true,
-      message: "회원가입 성공",
+      message: "성공적으로 가입이 완료되었습니다",
     });
   } catch (error) {
     console.log(`Error: ${error}`);
     return res.status(500).send({
       isSuccess: false,
-      message: "예상치 못한 오류 발생",
+      message: "예상치 못한 오류가 발생했습니다",
       error: error instanceof Error ? error.message : String(error),
     });
   }
@@ -45,25 +45,26 @@ export const localRegester = async (req: Request, res: Response) => {
 
 /* <-- 이메일 중복확인 --> */
 export const checkEmail = async (req: Request, res: Response) => {
-  const { email } = req.body;
-  const exists = await User.exists({ email });
-
   try {
+    const { email } = req.body;
+
+    const exists = await User.exists({ email });
     if (exists) {
       return res.status(400).send({
         isSuccess: false,
-        message: "이미 사용중인 이메일",
+        message: "이미 사용중인 이메일입니다",
       });
     }
+
     return res.status(200).send({
       isSuccess: true,
-      message: "사용 가능한 이메일",
+      message: "사용 가능한 이메일입니다",
     });
   } catch (error) {
     console.log(`Error: ${error}`);
     return res.status(500).send({
       isSuccess: false,
-      message: "예상치 못한 오류 발생",
+      message: "예상치 못한 오류가 발생했습니다",
       error: error instanceof Error ? error.message : String(error),
     });
   }
@@ -71,25 +72,26 @@ export const checkEmail = async (req: Request, res: Response) => {
 
 /* <-- 닉네임 중복확인 --> */
 export const checkNickname = async (req: Request, res: Response) => {
-  const { nickname } = req.body;
-  const exists = await User.exists({ nickname });
-
   try {
+    const { nickname } = req.body;
+
+    const exists = await User.exists({ nickname });
     if (exists) {
       return res.status(400).send({
         isSuccess: true,
-        message: "이미 사용중인 닉네임",
+        message: "이미 사용중인 닉네임입니다",
       });
     }
+
     return res.status(200).send({
       isSuccess: true,
-      message: "사용 가능한 닉네임",
+      message: "사용 가능한 닉네임입니다",
     });
   } catch (error) {
     console.log(`Error: ${error}`);
     return res.status(500).send({
       isSuccess: false,
-      message: "예상치 못한 오류 발생",
+      message: "예상치 못한 오류기 발생했습니다",
       error: error instanceof Error ? error.message : String(error),
     });
   }
@@ -97,10 +99,10 @@ export const checkNickname = async (req: Request, res: Response) => {
 
 /* <-- 로그인 --> */
 export const loginLocal = async (req: Request, res: Response) => {
-  const { email, password } = req.body;
-  const user = await User.findOne({ email });
-
   try {
+    const { email, password } = req.body;
+
+    const user = await User.findOne({ email });
     if (!user) {
       return res.status(403).send({
         isSuccess: false,
@@ -118,19 +120,11 @@ export const loginLocal = async (req: Request, res: Response) => {
       // Access Token 발급
       const accessToken = createAccessToken({
         id: user._id,
-        email: user.email,
-        name: user.name,
-        nickname: user.nickname,
-        avatarUrl: user.avatarUrl,
       });
 
       // Refresh Token 발급
       const refreshToken = createRefreshToken({
         id: user._id,
-        email: user.email,
-        name: user.name,
-        nickname: user.nickname,
-        avatarUrl: user.avatarUrl,
       });
 
       // Token 전송
@@ -143,24 +137,17 @@ export const loginLocal = async (req: Request, res: Response) => {
         httpOnly: true,
       });
 
-      // 로그인 성공 반환
+      // 성공 여부 반환
       return res.status(200).send({
         isSuccess: true,
-        message: "로그인 성공",
-        user: {
-          id: user._id,
-          email: user.email,
-          name: user.name,
-          nickname: user.nickname,
-          avatarUrl: user.avatarUrl
-        }
+        message: "성공적으로 로그인 했습니다",
       });
     }
   } catch (error) {
     console.log(`Error: ${error}`);
     return res.status(500).send({
       isSuccess: false,
-      message: "예상치 못한 오류 발생",
+      message: "예상치 못한 오류가 발생했습니다",
       error: error instanceof Error ? error.message : String(error),
     });
   }
@@ -180,13 +167,13 @@ export const logout = (req: Request, res: Response) => {
 
     return res.status(200).send({
       isSuccess: true,
-      message: "로그아웃 성공",
+      message: "성공적으로 로그아웃 했습니다",
     });
   } catch (error) {
     console.log(`Error: ${error}`);
     return res.status(500).send({
       isSuccess: false,
-      message: "예상치 못한 오류 발생",
+      message: "예상치 못한 오류가 발생했습니다",
       error: error instanceof Error ? error.message : String(error),
     });
   }

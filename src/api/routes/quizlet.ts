@@ -8,7 +8,8 @@ import {
   allTagList,
   myTagList,
   postStudy,
-} from "../controllers/quizletController";
+  getStudy,
+} from "../controllers/quizlet.controller";
 import authTokenMiddleware from "../../middlewares/authTokenMiddleware";
 
 const quizlet: Router = express.Router();
@@ -20,7 +21,7 @@ quizlet
   .route("/edit/:quizletId([0-9a-f]{24})")
   .all(authTokenMiddleware)
   .post(editQuizlet);
-quizlet.route("/study/:quizletId([0-9a-f]{24})").all(authTokenMiddleware).post(postStudy);
+quizlet.route("/study/:quizletId([0-9a-f]{24})").all(authTokenMiddleware).get(getStudy).post(postStudy);
 quizlet
   .route("/delete/:quizletId([0-9a-f]{24})")
   .all(authTokenMiddleware)

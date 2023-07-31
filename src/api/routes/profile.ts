@@ -5,7 +5,7 @@ import {
   editPassword,
   getProfile,
   uploadAvatar,
-} from "../controllers/profileController";
+} from "../controllers/profile.controller";
 import uploadAvatarMiddleware, {
   uploadAvatarErrorMiddleware,
 } from "../../middlewares/uploadAvatarMiddleware";

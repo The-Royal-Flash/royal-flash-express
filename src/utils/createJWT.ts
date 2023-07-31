@@ -3,11 +3,6 @@ import mongoose from "mongoose";
 
 interface Ipayload {
   id: mongoose.Types.ObjectId;
-  email: string;
-  name: string;
-  nickname: string;
-  avatarUrl: string;
-  // studyLog: string;
 }
 
 export function createAccessToken(payload: Ipayload) {

@@ -4,19 +4,17 @@ import User from "../../models/User";
 
 /* <-- 전체 학습세트 검색 --> */
 export const getSearch = async (req: Request, res: Response) => {
-  const { keyword, tagList, page, pageSize } = req.query;
-
   try {
+    const { keyword, tagList, page, pageSize } = req.query;
+    
+    const tagListArray = tagList ? (tagList as String).split(',').map(tag => tag.trim()) : tagList;
+
     // $or 조건을 저장할 배열 초기화
     const orCondition: any[] = [
       { title: { $regex: keyword, $options: 'i' } },
       { description: { $regex: keyword, $options: 'i' } },
+      { tagList: { $in: tagListArray } }
     ];
-
-    // tagList가 배열인 경우에만 $in 조건을 추가
-    if (Array.isArray(tagList)) {
-      orCondition.push({ tagList: { $in: tagList } });
-    }
 
     // 조건에 맞는 학습세트들을 조회
     const quizletList = await Quizlet.aggregate([

@@ -7,7 +7,6 @@ export interface IUser {
   nickname: string;
   password: string;
   avatarUrl: string;
-  studyLog: Types.ObjectId[];
 }
 
 const userSchema = new mongoose.Schema<IUser>({
@@ -16,9 +15,6 @@ const userSchema = new mongoose.Schema<IUser>({
   nickname: { type: String, required: true, unique: true },
   password: { type: String, required: true },
   avatarUrl: { type: String, default: "" },
-  studyLog: [
-    { type: mongoose.Schema.Types.ObjectId, ref: "StudyLog", default: [] },
-  ],
 });
 
 // Schema 저장시 비밀번호 암호화
