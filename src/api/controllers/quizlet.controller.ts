@@ -3,22 +3,22 @@ import Quizlet from "../../models/Quizlet";
 import QuestionCard from "../../models/QuestionCard";
 import StudyLog from "../../models/StudyLog";
 import jwt from "jsonwebtoken";
-import { Types } from "mongoose";
 
 /* <-- 학습세트 생성 --> */
 export const createQuizlet = async (req: Request, res: Response) => {
   try {
-    const { id } = (req as any).user;
     const { title, tagList, description } = req.body;
     const questionCardList = req.body.questionCardList;
 
     // 로그인 여부 확인
-    if (!id) {
+    if (!(req as any).user) {
       return res.status(401).send({
         isSuccess: false,
         message: "로그인된 사용자만 접근 가능합니다",
       });
     }
+
+    const { id } = (req as any).user;
 
     // 학습세트 생성
     const newQuizlet = await Quizlet.create({
@@ -85,8 +85,17 @@ export const createQuizlet = async (req: Request, res: Response) => {
 /* <-- 학습세트 삭제 --> */
 export const deleteQuizlet = async (req: Request, res: Response) => {
   try {
-    const { id } = (req as any).user;
     const { quizletId } = req.params;
+
+    // 로그인 여부 확인
+    if (!(req as any).user) {
+      return res.status(401).send({
+        isSuccess: false,
+        message: "로그인된 사용자만 접근 가능합니다",
+      });
+    }
+
+    const { id } = (req as any).user;
 
     // 학습세트 조회
     const quizlet = await Quizlet.findById(quizletId);
@@ -163,6 +172,7 @@ export const editQuizlet = async (req: Request, res: Response) => {
     }
 
     const { id } = (req as any).user;
+    
     // 학습세트 조회
     const quizlet = await Quizlet.findById(quizletId);
     if (!quizlet) {
