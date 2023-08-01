@@ -561,6 +561,7 @@ export const getStudy = async (req: Request, res: Response) => {
     } else if(mode === '오답') {
       // 학습기록 조회
       const studyLog = await StudyLog.find({ owner: id, about: quizletId })
+      .populate('wrongList')
       .sort({ createAt: -1 })
       .exec();
       
