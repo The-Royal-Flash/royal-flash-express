@@ -6,6 +6,7 @@ export interface IStudyLog {
   createAt: Date;
   about: Types.ObjectId;
   owner: Types.ObjectId;
+  mode: '전체' | '오답';
 }
 
 const studyLogSchema = new mongoose.Schema<IStudyLog>({
@@ -14,6 +15,7 @@ const studyLogSchema = new mongoose.Schema<IStudyLog>({
   createAt: { type: Date, default: Date.now },
   about: { type: mongoose.Schema.Types.ObjectId, ref: "Quizlet" },
   owner: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
+  mode: { type: String, required: true }
 });
 
 const StudyLog = mongoose.model<IStudyLog>("StudyLog", studyLogSchema);
