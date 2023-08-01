@@ -1,6 +1,6 @@
 import express, { Router } from "express";
 import authTokenMiddleware from "../../middlewares/authTokenMiddleware";
-import { getMyQuizletSearch, getSearch } from "../controllers/searchController";
+import { getMyQuizletSearch, getSearch } from "../controllers/search.controller";
 
 const search: Router = express.Router();
 

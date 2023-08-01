@@ -5,7 +5,7 @@ import {
   localRegester,
   loginLocal,
   logout,
-} from "../controllers/authController";
+} from "../controllers/auth.controller";
 
 const auth: Router = express.Router();
 
