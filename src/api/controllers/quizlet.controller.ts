@@ -475,7 +475,7 @@ export const myTagList = async (req: Request, res: Response) => {
 export const postStudy = async (req: Request, res: Response) => {
   try {
     const { quizletId } = req.params;
-    const { questionListToReview, questionListToCorrect } = req.body;
+    const { questionListToReview, questionListToCorrect, mode } = req.body;
 
     // 로그인 여부 확인
     if (!(req as any).user) {
@@ -501,7 +501,8 @@ export const postStudy = async (req: Request, res: Response) => {
       wrongList: questionListToReview,
       correctList: questionListToCorrect,
       about: quizletId,
-      owner: id
+      owner: id,
+      mode
     });
     if(!studyLog) {
       return res.status(400).send({
