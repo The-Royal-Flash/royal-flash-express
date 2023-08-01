@@ -1,13 +1,12 @@
 import { Request, Response } from "express";
 import Quizlet from "../../models/Quizlet";
-import User from "../../models/User";
+import StudyLog, { IStudyLog } from "../../models/StudyLog";
 
 /* <-- 전체 학습세트 검색 --> */
 export const getSearch = async (req: Request, res: Response) => {
   try {
     const { keyword, tagList, page, pageSize } = req.query;
-    
-    const tagListArray = tagList ? (tagList as String).split(',').map(tag => tag.trim()) : tagList;
+    const tagListArray = tagList ? (tagList as String).split(',').map(tag => tag.trim()) : [];
 
     // $or 조건을 저장할 배열 초기화
     const orCondition: any[] = [
@@ -16,68 +15,22 @@ export const getSearch = async (req: Request, res: Response) => {
       { tagList: { $in: tagListArray } }
     ];
 
-    // 조건에 맞는 학습세트들을 조회
-    const quizletList = await Quizlet.aggregate([
-      {
-        $match: {
-          $or: orCondition,
-        },
-      },
-      {
-        $lookup: {
-          from: "questioncards", // questioncards 컬렉션과 조인
-          localField: "questionCardList", // Quizlet 모델의 questionCardList 필드와 조인
-          foreignField: "_id", // questioncards 컬렉션의 _id 필드와 조인
-          as: "questionCardList", // 조인 결과를 저장할 필드 이름
-        },
-      },
-      {
-        $lookup: {
-          from: "users", // users 컬렉션과 조인
-          localField: "owner", // Quizlet 모델의 owner 필드와 조인
-          foreignField: "_id", // users 컬렉션의 _id 필드와 조인
-          as: "owner", // 조인 결과를 저장할 필드 이름
-        },
-      },
-      {
-        $unwind: "$owner", // owner 배열을 풀어서 개별 문서로 만듬
-      },
-      {
-        $project: {
-          title: 1,
-          description: 1,
-          tagList: 1,
-          numOfQuestionCard: { $size: "$questionCardList" }, // questionCardList 필드의 길이를 반환
-          owner: {
-            _id: 1,
-            nickname: 1,
-            avatarUrl: 1,
-          },
-        },
-      },
-      {
-        $skip: (Number(page) - 1) * Number(pageSize), // 페이지 크기와 페이지 번호에 따라 스킵할 문서 수 계산
-      },
-      {
-        $limit: Number(pageSize), // 페이지 크기만큼 결과 반환
-      },
-    ]);
+    // 학습세트들을 조회
+    const quizletList = await Quizlet.find({ $or: orCondition })
+    .populate('owner', 'nickname avatarUrl')
+    .select('title description tagList questionCardList owner')
+    .skip((Number(page) - 1) * Number(pageSize))
+    .limit(Number(pageSize))
+    .lean()
 
-    // 전체 결과의 갯수를 가져와서 총 페이지 수 계산
-    const totalCount = await Quizlet.find({
-      $or: [
-        { title: { $regex: keyword, $options: "i" } },
-        { description: { $regex: keyword, $options: "i" } },
-        { tagList: { $in: tagList } },
-      ],
-    }).countDocuments();
-
-    const totalPages = Math.ceil(totalCount / Number(pageSize));
+    // 총 페이지 계산
+    const totalCount: number = await Quizlet.find({$or: orCondition}).countDocuments();
+    const totalPage: number = Math.ceil(totalCount / Number(pageSize));
 
     return res.status(200).json({
       isSuccess: true,
       page,
-      totalPages,
+      totalPage,
       quizletList
     });
   } catch (error) {
@@ -92,97 +45,65 @@ export const getSearch = async (req: Request, res: Response) => {
 
 /* <-- 나의 학습세트 검색 --> */
 export const getMyQuizletSearch = async (req: Request, res: Response) => {
-  const { keyword, tagList, page, pageSize, order } = req.query;
-
   try {
-    // 로그인한 유저 확인
-    const user = (req as any).user;
-    if (!user) {
+    const { keyword, tagList, page, pageSize, order } = req.query;
+    const tagListArray = tagList ? (tagList as String).split(',').map(tag => tag.trim()) : [];
+
+    // 로그인 여부 확인
+    if (!(req as any).user) {
       return res.status(401).send({
         isSuccess: false,
-        message: "로그인이 필요한 서비스 입니다",
+        message: "로그인된 사용자만 접근 가능합니다",
       });
     }
 
-    // 로그인한 사용자의 studyLog 조회
-    const userInfo: any = await User.findById(user.id).populate("studyLog");
-    if (!userInfo) {
-      return res.status(401).send({
-        isSuccess: false,
-        message: "사용자 정보를 찾을 수 없습니다",
-      });
-    }
+    const { id } = (req as any).user;
+    
+    // 사용자의 학습기록 조회
+    const userStudyLogs = await StudyLog.find({owner: id, mode: "전체"}).sort({ createAt: order==='ascending' ? 1 : -1});
 
-    // $or 조건을 저장할 배열 초기화
-    const orCondition: any[] = [
-      { title: { $regex: keyword, $options: 'i' } },
-      { description: { $regex: keyword, $options: 'i' } },
-    ];
+    // 학습세트들의 ObjectId를 추출 (중복 제거)
+    const quizletIds = [...new Set(userStudyLogs.map((studyLog:IStudyLog) => String(studyLog.about)))];
+    
+    // 학습세트 조회
+    const quizletList = await Quizlet.find({
+      _id: {$in: quizletIds},
+      $or: [
+        { title: { $regex: keyword, $options: 'i' } },
+        { description: { $regex: keyword, $options: 'i' } },
+        { tagList: { $in: tagListArray } }
+      ]
+    })
+    .populate('questionCardList')
+    .populate('owner');
 
-    // tagList가 배열인 경우에만 $in 조건을 추가
-    if (Array.isArray(tagList)) {
-      orCondition.push({ tagList: { $in: tagList } });
-    }
+    // 학습세트와 연관된 최근 학습기록 조회
+    const quizletWithStudyLog = quizletList.map((quizlet: any) => {
+      const latestStudyLog = userStudyLogs.find((studyLog: any) => String(studyLog.about) === String(quizlet._id) && studyLog.mode === "전체");
+      return {
+        ...quizlet.toObject(),
+        studyLog: {
+          createAt: latestStudyLog?.createAt || null,
+          numOfQuestionListToReview: latestStudyLog?.wrongList?.length || 0,
+        },
+      };
+    });
 
-    // 현재 로그인한 사용자의 학습기록 중 about에 기록된 학습세트 uuId를 추출
-    const quizletIdList: any = userInfo.studyLog.map((log: any) => log.about);
-
-    // 로그인한 사용자의 학습기록에 기록된 quizlet들만 결과로 도출하기 위해 $match 파이프라인 추가
-    const quizletList = await Quizlet.aggregate([
-      {
-        $match: {
-          $or: orCondition,
-          _id: { $in: quizletIdList }, // 로그인한 사용자의 studyLog에 기록된 quizlet들만 조회
-        },
-      },
-      {
-        $lookup: {
-          from: "questioncards", // questioncards 컬렉션과 조인
-          localField: "questionCardList", // Quizlet 모델의 questionCardList 필드와 조인
-          foreignField: "_id", // questioncards 컬렉션의 _id 필드와 조인
-          as: "questionCardList", // 조인 결과를 저장할 필드 이름
-        },
-      },
-      {
-        $lookup: {
-          from: "studylogs", // studylogs 컬렉션과 조인
-          localField: "_id", // Quizlet 모델의 _id 필드와 조인
-          foreignField: "about", // studylogs 컬렉션의 about 필드와 조인
-          as: "studyLogs", // 조인 결과를 저장할 필드 이름
-        },
-      },
-      {
-        $unwind: {
-          path: "$studyLogs", // studyLogs 배열을 풀어서 개별 문서로 만듬
-          preserveNullAndEmptyArrays: true
-        }
-      },
-      {
-        $project: {
-          title: 1,
-          tagList: 1,
-          description: 1,
-          numOfQuestions: { $size: "$questionCardList" }, // questionCardList 필드의 길이를 반환
-          numOfQuestionsToReview: { $size: { $ifNull: ["$studyLogs.wrongList", []] }}, // StudyLog 모델의 wrongList 필드
-          numOfQuestionsToCorrect: {$size: { $ifNull: ["$studyLogs.correctList", []] }}, // StudyLog 모델의 correctList 필드
-          lastQuizDate: { $ifNull: ["$studyLogs.updateAt", null] }
-        },
-      },
-      {
-        $sort: { numOfQuestionsToCorrect: order === 'ascending' ? 1 : -1 }
-      },
-      {
-        $skip: (Number(page) - 1) * Number(pageSize), // 페이지 크기와 페이지 번호에 따라 스킵할 문서 수 계산
-      },
-      {
-        $limit: Number(pageSize), // 페이지 크기만큼 결과 반환
-      },
-    ]);
+    // 페이지네이션 처리
+    const totalCount = quizletWithStudyLog.length;
+    const totalPage = Math.ceil(totalCount / Number(pageSize));
+    const pagedQuizletList = quizletWithStudyLog.slice(
+      (Number(page) - 1) * Number(pageSize),
+      Number(page) * Number(pageSize)
+    );
 
     return res.status(200).send({
       isSuccess: true,
-      quizletList
+      page,
+      totalPage,
+      quizletList: pagedQuizletList
     });
+
   } catch (error) {
     console.log(`Error: ${error}`);
     return res.status(500).send({
