@@ -1,7 +1,5 @@
 import { Request, Response } from "express";
 import User from "../../models/User";
-import { createAccessToken, createRefreshToken } from "../../utils/createJWT";
-import jwt, { JwtPayload } from "jsonwebtoken";
 import { changePathFormula } from "../../utils/utils";
 import fs from "fs";
 import bcrypt from "bcrypt";
@@ -78,29 +76,6 @@ export const editName = async (req: Request, res: Response) => {
         message: "사용자를 찾을 수 없거나 정보 업데이트시 오류가 발생했습니다",
       });
     }
-
-    // Access Token 재발행
-    const accessToken = createAccessToken({
-      id: updatedUser._id,
-    });
-
-    // Refresh Token 재발행
-    const refreshToken = createRefreshToken({
-      id: updatedUser._id,
-    });
-
-    // Token 재전송
-    res.cookie("accessToken", accessToken, {
-      secure: false, // http: false, https: true
-      httpOnly: true,
-    });
-    res.cookie("refreshToken", refreshToken, {
-      secure: false, // http: false, https: true
-      httpOnly: true,
-    });
-
-    // Update된 사용자 정보로 req.user 수정
-    (req as any).user = jwt.decode(accessToken) as JwtPayload;
 
     // 성공 여부 반환
     return res.status(200).send({
