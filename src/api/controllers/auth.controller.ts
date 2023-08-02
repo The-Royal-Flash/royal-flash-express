@@ -1,7 +1,8 @@
 import { Request, Response } from "express";
 import User from "../../models/User";
 import bcrypt from "bcrypt";
-import { createAccessToken, createRefreshToken } from "../../utils/createJWT";
+import { createAccessToken, createRefreshToken } from "../../utils/jwt-util";
+import RefreshToken from "../../models/RefreshToken";
 
 /* <-- 회원가입 --> */
 export const localRegester = async (req: Request, res: Response) => {
@@ -121,11 +122,24 @@ export const loginLocal = async (req: Request, res: Response) => {
       const accessToken = createAccessToken({
         id: user._id,
       });
-
       // Refresh Token 발급
-      const refreshToken = createRefreshToken({
-        id: user._id,
-      });
+      const refreshToken = createRefreshToken();
+
+      // DB에 Refresh Token 존재 여부 확인 후 저장
+      const isRefreshToken = await RefreshToken.exists({userId: user._id});
+      if(!isRefreshToken) {
+        await RefreshToken.create({
+          userId: user._id,
+          token: refreshToken
+        });
+      } else {
+        await RefreshToken.findOneAndUpdate(
+          {userId: user._id},
+          {
+          token: refreshToken,
+          createdAt: Date.now()
+        });
+      }
 
       // Token 전송
       res.cookie("accessToken", accessToken, {

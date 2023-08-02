@@ -3,6 +3,8 @@ import Quizlet from "../../models/Quizlet";
 import QuestionCard from "../../models/QuestionCard";
 import StudyLog from "../../models/StudyLog";
 import jwt from "jsonwebtoken";
+import { createAccessToken, verifyAccessToken } from "../../utils/jwt-util";
+import RefreshToken from "../../models/RefreshToken";
 
 /* <-- 학습세트 생성 --> */
 export const createQuizlet = async (req: Request, res: Response) => {
@@ -317,20 +319,6 @@ export const quizletDetail = async (req: Request, res: Response) => {
   try {
     const { quizletId } = req.params;
 
-    // 로그인 여부 판단
-    const accessToken = req.cookies.accessToken;
-    if(accessToken) {
-      try {
-        const decoded = await jwt.verify(
-          accessToken,
-          process.env.ACCESS_SECRET as string,
-        { complete: true },
-        );
-        (req as any).user = decoded.payload;
-      } catch(error) {
-      }
-    }
-
     // 학습세트 조회
     const quizlet = await Quizlet.findById(quizletId).populate({
       path: 'questionCardList',
@@ -344,6 +332,28 @@ export const quizletDetail = async (req: Request, res: Response) => {
         isSuccess: false,
         message: '학습세트를 찾을 수 없습니다'
       });
+    }
+
+    // 로그인 여부 판단
+    const accessToken = req.cookies.accessToken;
+    const refreshToken = req.cookies.refreshToken;
+    const isAccessToken = verifyAccessToken(accessToken);
+    const isRefreshToken = verifyAccessToken(refreshToken);
+    if(!isAccessToken) {
+      if(isRefreshToken) {
+        const refreshTokenData = await RefreshToken.findOne({token: refreshToken}).select('userId');
+        if(refreshTokenData) {
+          const newAccessToken = createAccessToken({id: refreshTokenData.userId});
+
+          res.cookie("accessToken", newAccessToken, {
+            secure: false, // http: false, https: true
+            httpOnly: true,
+          });
+          (req as any).user = { id: refreshTokenData.userId };
+        }
+      }
+    } else {
+      (req as any).user = { id: isAccessToken };
     }
 
     // 로그인 여부 확인
