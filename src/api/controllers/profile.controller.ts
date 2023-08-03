@@ -32,7 +32,7 @@ export const getProfile = async (req: Request, res: Response) => {
     return res.status(200).send({
       isSuccess: true,
       user: {
-        _id,
+        id: _id,
         email,
         name,
         nickname,
