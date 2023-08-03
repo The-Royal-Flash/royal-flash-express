@@ -2,7 +2,6 @@ import { Request, Response } from "express";
 import Quizlet from "../../models/Quizlet";
 import QuestionCard from "../../models/QuestionCard";
 import StudyLog from "../../models/StudyLog";
-import jwt from "jsonwebtoken";
 import { createAccessToken, verifyAccessToken } from "../../utils/jwt-util";
 import RefreshToken from "../../models/RefreshToken";
 
@@ -67,6 +66,15 @@ export const createQuizlet = async (req: Request, res: Response) => {
     // 학습세트 저장
     quizlet.questionCardList = newQuestionCards;
     await quizlet.save();
+
+    /** 간이 학습기록 생성 **/
+    await StudyLog.create({
+      wrongList: [],
+      correctList: [],
+      about: quizlet._id,
+      owner: id,
+      mode: '전체'
+    });
 
     // 성공 여부 반환
     return res.status(200).send({
