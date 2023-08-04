@@ -4,6 +4,7 @@ import QuestionCard from "../../models/QuestionCard";
 import StudyLog from "../../models/StudyLog";
 import { createAccessToken, verifyAccessToken } from "../../utils/jwt-util";
 import RefreshToken from "../../models/RefreshToken";
+import { STUDY_MODE } from "../../constants/study";
 
 /* <-- 학습세트 생성 --> */
 export const createQuizlet = async (req: Request, res: Response) => {
@@ -73,7 +74,7 @@ export const createQuizlet = async (req: Request, res: Response) => {
       correctList: [],
       about: quizlet._id,
       owner: id,
-      mode: '전체'
+      mode: STUDY_MODE.ALL
     });
 
     // 성공 여부 반환
@@ -182,7 +183,7 @@ export const editQuizlet = async (req: Request, res: Response) => {
     }
 
     const { id } = (req as any).user;
-    
+
     // 학습세트 조회
     const quizlet = await Quizlet.findById(quizletId);
     if (!quizlet) {
@@ -218,7 +219,7 @@ export const editQuizlet = async (req: Request, res: Response) => {
       });
     }
 
-    
+
     for (const questionCardId of questionListToRemove) {
       // 학습세트의 학습카드 제거
       editedQuizlet.questionCardList = editedQuizlet.questionCardList.filter(
@@ -380,11 +381,23 @@ export const quizletDetail = async (req: Request, res: Response) => {
       const { id } = (req as any).user;
 
       // 로그인한 사용자의 학습기록 조회
-      const studyLog = await StudyLog.find({ owner: id, about: quizletId })
-      .sort({ createAt: -1 })
-      .exec();
+      const studyLog = await StudyLog.find({ owner: id, about: quizletId, mode: STUDY_MODE.ALL })
+        .sort({ createAt: -1 })
+        .exec();
 
-      // 로그인인 경우 성공 여부 반환
+      // 최신 학습 기록
+      const lastStudyLog =
+        studyLog.length > 0
+          ? {
+              studyCount: studyLog.length,
+              numOfQuestionList: quizlet.questionCardList.length,
+              numOfQuestionListToReview: studyLog[0].wrongList.length,
+              numOfQuestionListToCorrect: studyLog[0].correctList.length,
+              lastQuizDate: studyLog[0].createAt,
+            }
+          : {};
+
+     // 로그인인 경우 성공 여부 반환
       return res.status(200).send({
         isSuccess: true,
         message: '성공적으로 학습세트 상세정보를 조회했습니다',
@@ -393,11 +406,7 @@ export const quizletDetail = async (req: Request, res: Response) => {
         description: quizlet.description,
         questionList: quizlet.questionCardList,
         owner: quizlet.owner,
-        studyCount: studyLog.length,
-        numOfQuestionList: quizlet.questionCardList.length,
-        numOfQuestionListToReview: studyLog[0].wrongList.length,
-        numOfQuestionListToCorrect: studyLog[0].correctList.length,
-        lastQuizDate: studyLog[0].createAt
+        ...lastStudyLog
       });
     }
   } catch (error) {
@@ -569,7 +578,7 @@ export const getStudy = async (req: Request, res: Response) => {
       });
     }
 
-    if(mode === '전체') {
+    if(mode === STUDY_MODE.ALL) {
       // 문제정보 조회 성공 여부 반환(전체)
       return res.status(200).send({
         isSuccess: true,
@@ -577,7 +586,7 @@ export const getStudy = async (req: Request, res: Response) => {
         title: quizlet.title,
         questionCardList: quizlet.questionCardList,
       });
-    } else if(mode === '오답') {
+    } else if(mode === STUDY_MODE.WRONG) {
       // 학습기록 조회
       const studyLog = await StudyLog.find({ owner: id, about: quizletId })
       .populate('wrongList')
