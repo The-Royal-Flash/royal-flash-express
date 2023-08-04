@@ -1,6 +1,7 @@
 import { Request, Response } from "express";
 import Quizlet from "../../models/Quizlet";
 import StudyLog, { IStudyLog } from "../../models/StudyLog";
+import { STUDY_MODE } from "../../constants/study";
 
 /* <-- 전체 학습세트 검색 --> */
 export const getSearch = async (req: Request, res: Response) => {
@@ -60,7 +61,7 @@ export const getMyQuizletSearch = async (req: Request, res: Response) => {
     const { id } = (req as any).user;
     
     // 사용자의 학습기록 조회
-    const userStudyLogs = await StudyLog.find({owner: id, mode: "전체"}).sort({ createAt: order==='ascending' ? 1 : -1});
+    const userStudyLogs = await StudyLog.find({owner: id, mode: STUDY_MODE.ALL}).sort({ createAt: order==='ascending' ? 1 : -1});
 
     // 학습세트들의 ObjectId를 추출 (중복 제거)
     const quizletIds = [...new Set(userStudyLogs.map((studyLog:IStudyLog) => String(studyLog.about)))];
@@ -79,7 +80,7 @@ export const getMyQuizletSearch = async (req: Request, res: Response) => {
 
     // 학습세트와 연관된 최근 학습기록 조회
     const quizletWithStudyLog = quizletList.map((quizlet: any) => {
-      const latestStudyLog = userStudyLogs.find((studyLog: any) => String(studyLog.about) === String(quizlet._id) && studyLog.mode === "전체");
+      const latestStudyLog = userStudyLogs.find((studyLog: any) => String(studyLog.about) === String(quizlet._id) && studyLog.mode === STUDY_MODE.ALL);
       return {
         ...quizlet.toObject(),
         studyLog: {

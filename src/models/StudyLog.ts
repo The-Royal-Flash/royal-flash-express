@@ -1,4 +1,5 @@
 import mongoose, { Types } from "mongoose";
+import { STUDY_MODE } from "../constants/study";
 
 export interface IStudyLog {
   wrongList: Types.ObjectId[];
@@ -6,7 +7,7 @@ export interface IStudyLog {
   createAt: Date;
   about: Types.ObjectId;
   owner: Types.ObjectId;
-  mode: '전체' | '오답';
+  mode: keyof typeof STUDY_MODE;
 }
 
 const studyLogSchema = new mongoose.Schema<IStudyLog>({
