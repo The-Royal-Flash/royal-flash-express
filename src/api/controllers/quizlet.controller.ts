@@ -406,7 +406,7 @@ export const quizletDetail = async (req: Request, res: Response) => {
         description: quizlet.description,
         questionList: quizlet.questionCardList,
         owner: quizlet.owner,
-        ...lastStudyLog
+        studyLog: {...lastStudyLog}
       });
     }
   } catch (error) {
