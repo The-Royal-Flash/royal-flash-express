@@ -525,8 +525,8 @@ export const postStudy = async (req: Request, res: Response) => {
 
     // 학습기록 생성
     const studyLog = await StudyLog.create({
-      wrongList: questionListToReview,
-      correctList: questionListToCorrect,
+      wrongList: JSON.parse(questionListToReview),
+      correctList: JSON.parse(questionListToCorrect),
       about: quizletId,
       owner: id,
       mode
