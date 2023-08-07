@@ -2,7 +2,7 @@ import { Request, Response } from "express";
 import Quizlet from "../../models/Quizlet";
 import QuestionCard from "../../models/QuestionCard";
 import StudyLog from "../../models/StudyLog";
-import { createAccessToken, verifyAccessToken } from "../../utils/jwt-util";
+import { createAccessToken, verifyAccessToken, verifyRefreshToken } from "../../utils/jwt-util";
 import RefreshToken from "../../models/RefreshToken";
 import { STUDY_MODE } from "../../constants/study";
 
@@ -346,8 +346,8 @@ export const quizletDetail = async (req: Request, res: Response) => {
     // 로그인 여부 판단
     const accessToken = req.cookies.accessToken;
     const refreshToken = req.cookies.refreshToken;
-    const isAccessToken = verifyAccessToken(accessToken);
-    const isRefreshToken = verifyAccessToken(refreshToken);
+    const isAccessToken = accessToken && verifyAccessToken(accessToken);
+    const isRefreshToken = refreshToken && verifyRefreshToken(refreshToken);
     if(!isAccessToken) {
       if(isRefreshToken) {
         const refreshTokenData = await RefreshToken.findOne({token: refreshToken}).select('userId');
