@@ -334,7 +334,7 @@ export const quizletDetail = async (req: Request, res: Response) => {
       select: 'question'
     }).populate({
       path: 'owner',
-      select: 'name nickname email avatarUrl'
+      select: '_id name nickname email avatarUrl'
     });
     if(!quizlet) {
       return res.status(400).send({
@@ -556,8 +556,8 @@ export const postStudy = async (req: Request, res: Response) => {
 /* <-- 학습세트 문제 --> */
 export const getStudy = async (req: Request, res: Response) => {
   try {
-    const { mode } = req.body;
-    const { quizletId } = req.params;
+    const { quizletId, mode } = req.params;
+    console.log(quizletId)
 
     // 로그인 여부 확인
     if(!(req as any).user) {
