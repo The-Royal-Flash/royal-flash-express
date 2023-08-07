@@ -14,7 +14,6 @@ const REFRESH_TOKEN_EXPIRATION = "7d";
 
 const createAccessToken = (payload: Ipayload) => {
   const accessToken = jwt.sign(payload, ACCESS_SECRET, {
-    algorithm: 'HS256',
     expiresIn: ACCESS_TOKEN_EXPIRATION,
     issuer: "Royal Flash",
   });
@@ -34,7 +33,6 @@ const verifyAccessToken = (token: string): mongoose.Types.ObjectId | false => {
 
 const createRefreshToken = () => {
   const refreshToken = jwt.sign({}, REFRESH_SECRET, {
-    algorithm: 'HS256',
     expiresIn: REFRESH_TOKEN_EXPIRATION,
     issuer: "Royal Flash",
   });
