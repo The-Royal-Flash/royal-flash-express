@@ -11,15 +11,14 @@ export const getSearch = async (req: Request, res: Response) => {
 			? (tagList as string).split(',').map((tag) => tag.trim())
 			: [];
 
-		// $or 조건을 저장할 배열 초기화
-		const orCondition: any[] = [
-			{ title: { $regex: keyword, $options: 'i' } },
-			{ description: { $regex: keyword, $options: 'i' } },
-			{ tagList: { $in: tagListArray } },
-		];
-
 		// 학습세트들을 조회
-		const quizletList = await Quizlet.find({ $or: orCondition })
+		const quizletList = await Quizlet.find({
+			$or: [
+				{ title: { $regex: keyword, $options: 'i' } },
+				{ description: { $regex: keyword, $options: 'i' } },
+			],
+			tagList: { $in: tagListArray },
+		})
 			.populate('owner', 'nickname avatarUrl')
 			.select('title description tagList questionCardList owner')
 			.skip((Number(page) - 1) * Number(pageSize))
@@ -28,7 +27,11 @@ export const getSearch = async (req: Request, res: Response) => {
 
 		// 총 페이지 계산
 		const totalCount: number = await Quizlet.find({
-			$or: orCondition,
+			$or: [
+				{ title: { $regex: keyword, $options: 'i' } },
+				{ description: { $regex: keyword, $options: 'i' } },
+			],
+			tagList: { $in: tagListArray },
 		}).countDocuments();
 		const totalPage: number = Math.ceil(totalCount / Number(pageSize));
 
@@ -85,8 +88,8 @@ export const getMyQuizletSearch = async (req: Request, res: Response) => {
 			$or: [
 				{ title: { $regex: keyword, $options: 'i' } },
 				{ description: { $regex: keyword, $options: 'i' } },
-				{ tagList: { $in: tagListArray } },
 			],
+			tagList: { $in: tagListArray },
 		})
 			.populate('questionCardList')
 			.populate('owner');
