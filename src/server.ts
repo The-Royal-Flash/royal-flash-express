@@ -8,13 +8,7 @@ const app: Express = express();
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
-app.use(
-	cors({
-		origin: '*',
-		methods: ['GET', 'POST', 'DELETE', 'UPDATE'],
-		credentials: true,
-	}),
-);
+app.use(cors());
 
 app.use('/uploads', express.static('uploads'));
 app.use('/api', api);
