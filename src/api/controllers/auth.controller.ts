@@ -102,6 +102,7 @@ export const checkNickname = async (req: Request, res: Response) => {
 export const loginLocal = async (req: Request, res: Response) => {
 	try {
 		const { email, password } = req.body;
+		console.log(email, password);
 
 		const user = await User.findOne({ email });
 		if (!user) {
