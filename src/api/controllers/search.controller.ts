@@ -12,13 +12,18 @@ export const getSearch = async (req: Request, res: Response) => {
 			: [];
 
 		// 학습세트들을 조회
-		const quizletList = await Quizlet.find({
+		const query: any = {
 			$or: [
 				{ title: { $regex: keyword, $options: 'i' } },
 				{ description: { $regex: keyword, $options: 'i' } },
 			],
-			tagList: { $in: tagListArray },
-		})
+		};
+
+		if (tagListArray.length > 0) {
+			query.tagList = { $in: tagListArray };
+		}
+
+		const quizletList = await Quizlet.find(query)
 			.populate('owner', 'nickname avatarUrl')
 			.select('title description tagList questionCardList owner')
 			.skip((Number(page) - 1) * Number(pageSize))
@@ -30,6 +35,7 @@ export const getSearch = async (req: Request, res: Response) => {
 			$or: [
 				{ title: { $regex: keyword, $options: 'i' } },
 				{ description: { $regex: keyword, $options: 'i' } },
+				{ tagList: { $in: tagListArray } },
 			],
 			tagList: { $in: tagListArray },
 		}).countDocuments();
@@ -83,13 +89,20 @@ export const getMyQuizletSearch = async (req: Request, res: Response) => {
 		];
 
 		// 학습세트 조회
-		const quizletList = await Quizlet.find({
-			_id: { $in: quizletIds },
+		const query: any = {
 			$or: [
 				{ title: { $regex: keyword, $options: 'i' } },
 				{ description: { $regex: keyword, $options: 'i' } },
 			],
-			tagList: { $in: tagListArray },
+		};
+
+		if (tagListArray.length > 0) {
+			query.tagList = { $in: tagListArray };
+		}
+
+		const quizletList = await Quizlet.find({
+			_id: { $in: quizletIds },
+			query,
 		})
 			.populate('questionCardList')
 			.populate('owner');
@@ -101,9 +114,13 @@ export const getMyQuizletSearch = async (req: Request, res: Response) => {
 					String(studyLog.about) === String(quizlet._id) &&
 					studyLog.mode === STUDY_MODE.ALL,
 			);
+			const totalStudyLog = userStudyLogs.filter(
+				(studyLog: any) => String(studyLog.about) === String(quizlet._id),
+			);
 			return {
 				...quizlet.toObject(),
 				studyLog: {
+					studyCount: totalStudyLog?.length,
 					createAt: latestStudyLog?.createAt || null,
 					numOfQuestionListToReview: latestStudyLog?.wrongList?.length || 0,
 				},
