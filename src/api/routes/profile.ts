@@ -6,7 +6,8 @@ import {
 	getProfile,
 	uploadAvatar,
 } from '../controllers/profile.controller';
-import uploadAvatarMiddleware, {
+import {
+	uploadAvatarMiddleware,
 	uploadAvatarErrorMiddleware,
 } from '../../middlewares/uploadAvatarMiddleware';
 

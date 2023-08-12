@@ -2,7 +2,8 @@ import fs from 'fs';
 import { Request, Response } from 'express';
 import bcrypt from 'bcrypt';
 import User from '../../models/User';
-import { changePathFormula } from '../../utils/utils';
+import { uploadAvatarToS3 } from '../../middlewares/uploadAvatarMiddleware';
+import storage from '../../s3/s3.config';
 
 /* <-- Profile 정보 --> */
 export const getProfile = async (req: Request, res: Response) => {
@@ -147,8 +148,6 @@ export const editNickname = async (req: Request, res: Response) => {
 /* <-- Avatar 업로드 --> */
 export const uploadAvatar = async (req: Request, res: Response) => {
 	try {
-		const image = req.file;
-
 		// 로그인 여부 확인
 		if (!(req as any).user) {
 			return res.status(401).send({
@@ -157,6 +156,15 @@ export const uploadAvatar = async (req: Request, res: Response) => {
 			});
 		}
 
+		// 아바타 이미지 확인
+		if (!req.file) {
+			return res.status(404).send({
+				isSuccess: false,
+				message: '아바타 이미지를 찾을 수 없습니다',
+			});
+		}
+
+		const image = req.file;
 		const { id } = (req as any).user;
 
 		// 사용자 정보 조회
@@ -168,10 +176,13 @@ export const uploadAvatar = async (req: Request, res: Response) => {
 			});
 		}
 
+		// 아바타 이미지 업로드
+		const avatarUrl = await uploadAvatarToS3(image);
+
 		// DB에 변경된 Avatar URL 저장
 		const updatedInfo = await User.findByIdAndUpdate(
 			user._id,
-			{ avatarUrl: image ? changePathFormula(image.path) : user.avatarUrl },
+			{ avatarUrl },
 			{ new: true },
 		);
 
@@ -185,12 +196,15 @@ export const uploadAvatar = async (req: Request, res: Response) => {
 
 		// 기존 업로드된 Avatar 이미지 삭제
 		if (user.avatarUrl !== '') {
-			fs.unlink(user.avatarUrl, (error) => {
+			const regex = /\/([^/]+)$/;
+			const prevAvatarPath = (user.avatarUrl as any).match(regex)[1];
+			const removeAvatar = {
+				Bucket: process.env.S3_BUCKET_NAME as string,
+				Key: prevAvatarPath,
+			};
+			await storage.deleteObject(removeAvatar, function (error: Error) {
 				if (error) {
-					return res.status(500).send({
-						isSuccess: false,
-						message: '업로드시 서버에러가 발생했습니다',
-					});
+					console.log(error);
 				}
 			});
 		}
