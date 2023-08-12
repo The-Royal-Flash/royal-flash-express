@@ -72,15 +72,6 @@ export const createQuizlet = async (req: Request, res: Response) => {
 		quizlet.questionCardList = newQuestionCards;
 		await quizlet.save();
 
-		/** 간이 학습기록 생성 * */
-		await StudyLog.create({
-			wrongList: [],
-			correctList: [],
-			about: quizlet._id,
-			owner: id,
-			mode: STUDY_MODE.ALL,
-		});
-
 		// 성공 여부 반환
 		return res.status(200).send({
 			isSuccess: true,
@@ -567,76 +558,85 @@ export const postStudy = async (req: Request, res: Response) => {
 
 /* <-- 학습세트 문제 --> */
 export const getStudy = async (req: Request, res: Response) => {
-	try {
-		const { quizletId, mode } = req.params;
-		console.log(quizletId);
+  try {
+    const { quizletId, mode } = req.params;
 
-		// 로그인 여부 확인
-		if (!(req as any).user) {
-			return res.status(401).send({
-				isSuccess: false,
-				message: '로그인한 사용자만 접근 가능합니다',
-			});
-		}
+    // 로그인 여부 확인
+    if(!(req as any).user) {
+      return res.status(401).send({
+        isSuccess: false,
+        message: '로그인한 사용자만 접근 가능합니다'
+      });
+    }
 
-		const { id } = (req as any).user;
+    const { id } = (req as any).user;
 
-		// 학습세트 조회
-		const quizlet = await Quizlet.findById(quizletId).populate(
-			'questionCardList',
-		);
-		if (!quizlet) {
-			return res.status(400).send({
-				isSuccess: false,
-				message: '학습세트를 찾을 수 없습니다',
-			});
-		}
+    // 학습세트 조회
+    const quizlet = await Quizlet.findById(quizletId).populate('questionCardList');
+    if(!quizlet) {
+      return res.status(400).send({
+        isSuccess: false,
+        message: '학습세트를 찾을 수 없습니다'
+      });
+    }
 
-		if (mode === STUDY_MODE.ALL) {
-			// 문제정보 조회 성공 여부 반환(전체)
-			return res.status(200).send({
-				isSuccess: true,
-				message: '성공적으로 학습세트 문제정보(전체)를 조회했습니다',
-				title: quizlet.title,
-				questionCardList: quizlet.questionCardList,
-			});
-		}
-		if (mode === STUDY_MODE.WRONG) {
-			// 학습기록 조회
-			const studyLog = await StudyLog.find({ owner: id, about: quizletId })
-				.populate('wrongList')
-				.sort({ createAt: -1 })
-				.exec();
+    if(mode === STUDY_MODE.ALL) {
+      // 문제정보 조회 성공 여부 반환(전체)
+      return res.status(200).send({
+        isSuccess: true,
+        message: '성공적으로 학습세트 문제정보(전체)를 조회했습니다',
+        title: quizlet.title,
+        questionCardList: quizlet.questionCardList,
+      });
+    } else if(mode === STUDY_MODE.WRONG) {
+      // 학습기록 존재여부 확인 
+      const isStudyLog = await StudyLog.exists({ owner: id, about: quizletId });
 
-			// 오답 기록이 없는 경우
-			if (studyLog.length === 0 || studyLog[0].wrongList.length === 0) {
-				return res.status(200).send({
-					isSuccess: true,
-					message: '학습기록에서 오답목록이 없습니다',
-					title: quizlet.title,
-					questionCardList: [],
-				});
-			}
+      if(!isStudyLog) {
+        return res.status(404).send({
+          isSuccess: false,
+          message: '학습기록(오답)을 찾을 수 없습니다',
+          title: quizlet.title,
+          questionCardList: []
+        });
+      }
 
-			// 문제정보 조회 성공 여부 반환(오답)
-			return res.status(200).send({
-				isSuccess: true,
-				message: '성공적으로 학습세트 문제정보(오답)를 조회했습니다',
-				title: quizlet.title,
-				questionCardList: studyLog[0].wrongList,
-			});
-		}
-		// 유요하지 않은 모드 값인 경우
-		return res.status(400).send({
-			isSuccess: false,
-			message: '유요하지 않은 모드 값 입니다',
-		});
-	} catch (error) {
-		console.log(`Error: ${error}`);
-		return res.status(500).send({
-			isSuccess: false,
-			message: '예상치 못한 오류가 발생했습니다',
-			error: error instanceof Error ? error.message : String(error),
-		});
-	}
+      // 학습기록 조회
+      const studyLog = await StudyLog.find({ owner: id, about: quizletId })
+      .populate('wrongList')
+      .sort({ createAt: -1 })
+      .exec();
+
+      // 오답 기록이 없는 경우
+      if(studyLog.length === 0 || studyLog[0].wrongList.length === 0) {
+        return res.status(200).send({
+          isSuccess: true,
+          message: '학습기록에 오답목록이 비어있습니다',
+          title: quizlet.title,
+          questionCardList: []
+        });
+      }
+
+      // 문제정보 조회 성공 여부 반환(오답)
+      return res.status(200).send({
+        isSuccess: true,
+        message: '성공적으로 학습세트 문제정보(오답)를 조회했습니다',
+        title: quizlet.title,
+        questionCardList: studyLog[0].wrongList
+      });
+    } else {
+      // 유요하지 않은 모드 값인 경우
+      return res.status(400).send({
+        isSuccess: false,
+        message: '유요하지 않은 모드 값 입니다'
+      });
+    }
+  } catch(error) {
+    console.log(`Error: ${error}`);
+    return res.status(500).send({
+      isSuccess: false,
+      message: "예상치 못한 오류가 발생했습니다",
+      error: error instanceof Error ? error.message : String(error),
+    });
+  }
 };
