@@ -1,8 +1,19 @@
 {
   "singleQuote": true,
-  "parser": "typescript",
   "semi": true,
   "useTabs": true,
   "printWidth": 80,
-  "trailingComma": "all"
+  "trailingComma": "all",
+  "overrides": [
+    {
+      "files": [
+        "*.mts",
+        "*.cts",
+        "*.ts"
+      ],
+      "options": {
+        "parser": "typescript"
+      }
+    }
+  ]
 }
