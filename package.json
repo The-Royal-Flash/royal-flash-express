@@ -5,7 +5,7 @@
   "main": "index.js",
   "scripts": {
     "build": "tsc",
-    "start": "node build/init.js",
+    "start": "forever start build/init.js",
     "dev": "nodemon --watch src --exec ts-node src/init.ts",
     "lint": "eslint src --ext ts --report-unused-disable-directives --max-warnings 0",
     "fix": "npx eslint . --fix"
