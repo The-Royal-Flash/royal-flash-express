@@ -90,6 +90,7 @@ export const getMyQuizletSearch = async (req: Request, res: Response) => {
 
 		// 학습세트 조회
 		const query: any = {
+			_id: { $in: quizletIds },
 			$or: [
 				{ title: { $regex: keyword, $options: 'i' } },
 				{ description: { $regex: keyword, $options: 'i' } },
@@ -100,10 +101,7 @@ export const getMyQuizletSearch = async (req: Request, res: Response) => {
 			query.tagList = { $in: tagListArray };
 		}
 
-		const quizletList = await Quizlet.find({
-			_id: { $in: quizletIds },
-			query,
-		})
+		const quizletList = await Quizlet.find(query)
 			.populate('questionCardList')
 			.populate('owner');
 
