@@ -352,7 +352,7 @@ export const quizletDetail = async (req: Request, res: Response) => {
 					});
 
 					res.cookie('accessToken', newAccessToken, {
-						secure: false, // http: false, https: true
+						secure: true, // http: false, https: true
 						httpOnly: true,
 					});
 					(req as any).user = { id: refreshTokenData.userId };

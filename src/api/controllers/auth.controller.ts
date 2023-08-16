@@ -102,6 +102,7 @@ export const checkNickname = async (req: Request, res: Response) => {
 export const loginLocal = async (req: Request, res: Response) => {
 	try {
 		const { email, password } = req.body;
+		console.log(email, password);
 
 		const user = await User.findOne({ email });
 		if (!user) {
@@ -144,11 +145,11 @@ export const loginLocal = async (req: Request, res: Response) => {
 
 		// Token 전송
 		res.cookie('accessToken', accessToken, {
-			secure: false, // http: false, https: true
+			secure: true, // http: false, https: true
 			httpOnly: true,
 		});
 		res.cookie('refreshToken', refreshToken, {
-			secure: false, // http: false, https: true
+			secure: true, // http: false, https: true
 			httpOnly: true,
 		});
 
@@ -178,7 +179,7 @@ export const loginLocal = async (req: Request, res: Response) => {
 export const logout = (req: Request, res: Response) => {
 	try {
 		const cookieOptions = {
-			secure: false, // http: false, https: true
+			secure: true, // http: false, https: true
 			httpOnly: true,
 			expires: new Date(0), // 쿠키 무효화
 		};
