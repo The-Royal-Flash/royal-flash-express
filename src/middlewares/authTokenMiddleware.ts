@@ -43,6 +43,7 @@ const authTokenMiddleware = async (
 				});
 
 				res.cookie('accessToken', newAccessToken, {
+					sameSite: 'none',
 					secure: true,
 					httpOnly: true,
 				});

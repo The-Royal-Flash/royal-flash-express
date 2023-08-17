@@ -145,10 +145,12 @@ export const loginLocal = async (req: Request, res: Response) => {
 
 		// Token 전송
 		res.cookie('accessToken', accessToken, {
+			sameSite: 'none',
 			secure: true, // http: false, https: true
 			httpOnly: true,
 		});
 		res.cookie('refreshToken', refreshToken, {
+			sameSite: 'none',
 			secure: true, // http: false, https: true
 			httpOnly: true,
 		});
@@ -178,14 +180,18 @@ export const loginLocal = async (req: Request, res: Response) => {
 /* <-- 로그아웃 --> */
 export const logout = (req: Request, res: Response) => {
 	try {
-		const cookieOptions = {
+		res.cookie('accessToken', '', {
+			sameSite: 'none',
 			secure: true, // http: false, https: true
 			httpOnly: true,
 			expires: new Date(0), // 쿠키 무효화
-		};
-
-		res.cookie('accessToken', '', cookieOptions);
-		res.cookie('refreshToken', '', cookieOptions);
+		});
+		res.cookie('refreshToken', '', {
+			sameSite: 'none',
+			secure: true, // http: false, https: true
+			httpOnly: true,
+			expires: new Date(0), // 쿠키 무효화
+		});
 
 		return res.status(200).send({
 			isSuccess: true,
