@@ -9,7 +9,7 @@ import {
 const search: Router = express.Router();
 
 search.route('/').get(getSearch);
-search.route('/myquizlet/').all(authTokenMiddleware).get(getMyQuizletSearch);
-search.route('/ownedquizlet/').all(authTokenMiddleware).get(getOwnedQuizlet);
+search.route('/myquizlet').all(authTokenMiddleware).get(getMyQuizletSearch);
+search.route('/ownedquizlet').all(authTokenMiddleware).get(getOwnedQuizlet);
 
 export default search;

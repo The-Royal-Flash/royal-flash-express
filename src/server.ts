@@ -1,4 +1,4 @@
-import express, { Express, Request, Response } from 'express';
+import express, { Express } from 'express';
 import cookieParser from 'cookie-parser';
 import cors from 'cors';
 import api from './api/api';
@@ -10,16 +10,12 @@ app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
 app.use(
 	cors({
-		origin: [
-			'https://web-royal-flash-react-3prof2llkv7xq3p.sel4.cloudtype.app',
-			'https://royal-flash.site',
-		],
+		origin: [process.env.FE_SERVER as string],
 		methods: ['GET', 'POST'],
 		credentials: true,
 	}),
 );
 
-app.use('/uploads', express.static('uploads'));
 app.use('/api', api);
 
 export default app;

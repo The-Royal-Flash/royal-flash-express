@@ -5,6 +5,7 @@ import {
 	verifyRefreshToken,
 } from '../utils/jwt-util';
 import RefreshToken from '../models/RefreshToken';
+import { sendTokenHandler } from '../utils/utils';
 
 const authTokenMiddleware = async (
 	req: Request,
@@ -13,8 +14,8 @@ const authTokenMiddleware = async (
 ) => {
 	try {
 		// 쿠키에 저장된 Token 추출
-		const { accessToken } = req.cookies;
-		const { refreshToken } = req.cookies;
+		const accessToken = req.cookies.accessToken;
+		const refreshToken = req.cookies.refreshToken;
 
 		// 쿠키 유효성 검증
 		const isAccessToken = verifyAccessToken(accessToken);
@@ -25,8 +26,7 @@ const authTokenMiddleware = async (
 				isSuccess: false,
 				message: 'Refresh Token이 만료 또는 유효하지 않습니다',
 			});
-		}
-		if (!isAccessToken) {
+		} else if (!isAccessToken) {
 			const refreshTokenData = await RefreshToken.findOne({
 				token: refreshToken,
 			}).select('userId');
@@ -42,11 +42,7 @@ const authTokenMiddleware = async (
 					id: refreshTokenData.userId,
 				});
 
-				res.cookie('accessToken', newAccessToken, {
-					sameSite: 'none',
-					secure: true,
-					httpOnly: true,
-				});
+				sendTokenHandler(res, 'accessToken', newAccessToken, false);
 
 				(req as any).user = { id: refreshTokenData.userId };
 				next();

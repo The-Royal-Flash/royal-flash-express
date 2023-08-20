@@ -3,6 +3,7 @@ import bcrypt from 'bcrypt';
 import User from '../../models/User';
 import { uploadAvatarToS3 } from '../../middlewares/uploadAvatarMiddleware';
 import storage from '../../s3/s3.config';
+import { unkownErrorHandler } from '../../utils/utils';
 
 /* <-- Profile 정보 --> */
 export const getProfile = async (req: Request, res: Response) => {
@@ -40,12 +41,7 @@ export const getProfile = async (req: Request, res: Response) => {
 			},
 		});
 	} catch (error) {
-		console.log(`Error: ${error}`);
-		return res.status(500).send({
-			isSuccess: false,
-			message: '예상치 못한 오류가 발생했습니다',
-			error: error instanceof Error ? error.message : String(error),
-		});
+		unkownErrorHandler(res, error);
 	}
 };
 
@@ -83,12 +79,7 @@ export const editName = async (req: Request, res: Response) => {
 			message: '성공적으로 사용자 이름을 변경했습니다',
 		});
 	} catch (error) {
-		console.log(`Error: ${error}`);
-		return res.status(500).send({
-			isSuccess: false,
-			message: '예상치 못한 오류가 발생했습니다',
-			error: error instanceof Error ? error.message : String(error),
-		});
+		unkownErrorHandler(res, error);
 	}
 };
 
@@ -135,12 +126,7 @@ export const editNickname = async (req: Request, res: Response) => {
 			message: '성공적으로 닉네임을 변경했습니다',
 		});
 	} catch (error) {
-		console.log(`Error: ${error}`);
-		return res.status(500).send({
-			isSuccess: false,
-			message: '예상치 못한 오류가 발생했습니다',
-			error: error instanceof Error ? error.message : String(error),
-		});
+		unkownErrorHandler(res, error);
 	}
 };
 
@@ -215,12 +201,7 @@ export const uploadAvatar = async (req: Request, res: Response) => {
 			avatarUrl: (req as any).user.avatarUrl,
 		});
 	} catch (error) {
-		console.log(`Error: ${error}`);
-		return res.status(500).send({
-			isSuccess: false,
-			message: '예상치 못한 오류가 발생했습니다',
-			error: error instanceof Error ? error.message : String(error),
-		});
+		unkownErrorHandler(res, error);
 	}
 };
 
@@ -277,11 +258,6 @@ export const editPassword = async (req: Request, res: Response) => {
 			message: '성공적으로 비밀번호를 변경했습니다',
 		});
 	} catch (error) {
-		console.log(`Error: ${error}`);
-		return res.status(500).send({
-			isSuccess: false,
-			message: '예상치 못한 오류가 발생했습니다',
-			error: error instanceof Error ? error.message : String(error),
-		});
+		unkownErrorHandler(res, error);
 	}
 };
