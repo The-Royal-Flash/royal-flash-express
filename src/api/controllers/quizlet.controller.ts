@@ -453,7 +453,7 @@ export const postStudy = async (req: Request, res: Response) => {
 						wrongList: questionListToReview,
 						correctList: questionListToCorrect,
 						updateAt: Date.now(),
-						views: studyLog.views++,
+						views: studyLog.views + 1,
 					},
 				);
 				if (!updatedStudyLog) {
@@ -465,30 +465,30 @@ export const postStudy = async (req: Request, res: Response) => {
 			}
 		} else {
 			// STUDY.MODE.WRONG 인 경우
-			if (studyLog) {
-				// 오답을 제외한 학습카드 추출
-				const correctList = quizlet.questionCardList.filter((question) => {
-					return !questionListToReview.includes(question);
+			if (!studyLog) {
+				return res.status(400).send({
+					isSuccess: false,
+					message: '이전 학습기록이 존재하지 않습니다',
 				});
+			}
 
-				const updatedStudyLog = await StudyLog.findOneAndUpdate(
-					{
-						owner: id,
-						about: quizletId,
-					},
-					{
-						wrongList: questionListToReview,
-						correctList,
-						updateAt: Date.now(),
-						views: studyLog.views + 1,
-					},
-				);
-				if (!updatedStudyLog) {
-					return res.status(400).send({
-						isSuccess: false,
-						message: '학습기록 갱신 중 오류가 발생했습니다',
-					});
-				}
+			const updatedStudyLog = await StudyLog.findOneAndUpdate(
+				{
+					owner: id,
+					about: quizletId,
+				},
+				{
+					wrongList: questionListToReview,
+					correctList: [...studyLog.correctList, ...questionListToCorrect],
+					updateAt: Date.now(),
+					views: studyLog.views + 1,
+				},
+			);
+			if (!updatedStudyLog) {
+				return res.status(400).send({
+					isSuccess: false,
+					message: '학습기록 갱신 중 오류가 발생했습니다',
+				});
 			}
 		}
 

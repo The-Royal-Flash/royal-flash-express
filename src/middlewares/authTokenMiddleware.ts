@@ -18,8 +18,8 @@ const authTokenMiddleware = async (
 		const refreshToken = req.cookies.refreshToken;
 
 		// 쿠키 유효성 검증
-		const isAccessToken = verifyAccessToken(accessToken);
-		const isRefreshToken = verifyRefreshToken(refreshToken);
+		const isAccessToken = accessToken && verifyAccessToken(accessToken);
+		const isRefreshToken = refreshToken && verifyRefreshToken(refreshToken);
 
 		if (!isRefreshToken) {
 			return res.status(419).send({
