@@ -43,6 +43,8 @@ jobs:
                   value: ${{ secrets.S3_BUCKET_NAME }}
                 - name: S3_REGION
                   value: ${{ secrets.S3_REGION }}
+                - name: FE_SERVER
+                  value: ${{ secrets.FE_SERVER }}
               ports: "8080"
               install: npm i
               build: npm run build
