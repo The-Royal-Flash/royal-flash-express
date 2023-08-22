@@ -3,6 +3,7 @@ import bcrypt from 'bcrypt';
 import User from '../../models/User';
 import { createAccessToken, createRefreshToken } from '../../utils/jwt-util';
 import RefreshToken from '../../models/RefreshToken';
+import { sendTokenHandler, unkownErrorHandler } from '../../utils/utils';
 
 /* <-- 회원가입 --> */
 export const localRegester = async (req: Request, res: Response) => {
@@ -35,12 +36,7 @@ export const localRegester = async (req: Request, res: Response) => {
 			message: '성공적으로 가입이 완료되었습니다',
 		});
 	} catch (error) {
-		console.log(`Error: ${error}`);
-		return res.status(500).send({
-			isSuccess: false,
-			message: '예상치 못한 오류가 발생했습니다',
-			error: error instanceof Error ? error.message : String(error),
-		});
+		unkownErrorHandler(res, error);
 	}
 };
 
@@ -62,12 +58,7 @@ export const checkEmail = async (req: Request, res: Response) => {
 			message: '사용 가능한 이메일입니다',
 		});
 	} catch (error) {
-		console.log(`Error: ${error}`);
-		return res.status(500).send({
-			isSuccess: false,
-			message: '예상치 못한 오류가 발생했습니다',
-			error: error instanceof Error ? error.message : String(error),
-		});
+		unkownErrorHandler(res, error);
 	}
 };
 
@@ -89,12 +80,7 @@ export const checkNickname = async (req: Request, res: Response) => {
 			message: '사용 가능한 닉네임입니다',
 		});
 	} catch (error) {
-		console.log(`Error: ${error}`);
-		return res.status(500).send({
-			isSuccess: false,
-			message: '예상치 못한 오류기 발생했습니다',
-			error: error instanceof Error ? error.message : String(error),
-		});
+		unkownErrorHandler(res, error);
 	}
 };
 
@@ -102,7 +88,6 @@ export const checkNickname = async (req: Request, res: Response) => {
 export const loginLocal = async (req: Request, res: Response) => {
 	try {
 		const { email, password } = req.body;
-		console.log(email, password);
 
 		const user = await User.findOne({ email });
 		if (!user) {
@@ -144,16 +129,8 @@ export const loginLocal = async (req: Request, res: Response) => {
 		}
 
 		// Token 전송
-		res.cookie('accessToken', accessToken, {
-			sameSite: 'none',
-			secure: true, // http: false, https: true
-			httpOnly: true,
-		});
-		res.cookie('refreshToken', refreshToken, {
-			sameSite: 'none',
-			secure: true, // http: false, https: true
-			httpOnly: true,
-		});
+		sendTokenHandler(res, 'accessToken', accessToken, false);
+		sendTokenHandler(res, 'refreshToken', refreshToken, false);
 
 		// 성공 여부 반환
 		return res.status(200).send({
@@ -168,41 +145,22 @@ export const loginLocal = async (req: Request, res: Response) => {
 			},
 		});
 	} catch (error) {
-		console.log(`Error: ${error}`);
-		return res.status(500).send({
-			isSuccess: false,
-			message: '예상치 못한 오류가 발생했습니다',
-			error: error instanceof Error ? error.message : String(error),
-		});
+		unkownErrorHandler(res, error);
 	}
 };
 
 /* <-- 로그아웃 --> */
 export const logout = (req: Request, res: Response) => {
 	try {
-		res.cookie('accessToken', '', {
-			sameSite: 'none',
-			secure: true, // http: false, https: true
-			httpOnly: true,
-			expires: new Date(0), // 쿠키 무효화
-		});
-		res.cookie('refreshToken', '', {
-			sameSite: 'none',
-			secure: true, // http: false, https: true
-			httpOnly: true,
-			expires: new Date(0), // 쿠키 무효화
-		});
+		// Token 무효화
+		sendTokenHandler(res, 'accessToken', '', true);
+		sendTokenHandler(res, 'refreshToken', '', true);
 
 		return res.status(200).send({
 			isSuccess: true,
 			message: '성공적으로 로그아웃 했습니다',
 		});
 	} catch (error) {
-		console.log(`Error: ${error}`);
-		return res.status(500).send({
-			isSuccess: false,
-			message: '예상치 못한 오류가 발생했습니다',
-			error: error instanceof Error ? error.message : String(error),
-		});
+		unkownErrorHandler(res, error);
 	}
 };

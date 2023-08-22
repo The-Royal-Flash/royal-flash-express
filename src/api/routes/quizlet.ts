@@ -5,12 +5,15 @@ import {
 	quizletInfo,
 	editQuizlet,
 	quizletDetail,
-	allTagList,
-	myTagList,
 	postStudy,
 	getStudy,
 } from '../controllers/quizlet.controller';
 import authTokenMiddleware from '../../middlewares/authTokenMiddleware';
+import {
+	allTagList,
+	ownedTagList,
+	studiedTagList,
+} from '../controllers/tag.controller';
 
 const quizlet: Router = express.Router();
 
@@ -34,6 +37,7 @@ quizlet
 	.all(authTokenMiddleware)
 	.delete(deleteQuizlet);
 quizlet.route('/tag').get(allTagList);
-quizlet.route('/tag/mine').all(authTokenMiddleware).get(myTagList);
+quizlet.route('/tag/mine').all(authTokenMiddleware).get(studiedTagList);
+quizlet.route('/tag/owned').all(authTokenMiddleware).get(ownedTagList);
 
 export default quizlet;

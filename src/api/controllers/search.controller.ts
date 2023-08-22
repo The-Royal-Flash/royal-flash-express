@@ -2,6 +2,7 @@ import { Request, Response } from 'express';
 import Quizlet from '../../models/Quizlet';
 import StudyLog, { IStudyLog } from '../../models/StudyLog';
 import { STUDY_MODE } from '../../constants/study';
+import { unkownErrorHandler } from '../../utils/utils';
 
 /* <-- 전체 학습세트 검색 --> */
 export const getSearch = async (req: Request, res: Response) => {
@@ -48,16 +49,11 @@ export const getSearch = async (req: Request, res: Response) => {
 			quizletList,
 		});
 	} catch (error) {
-		console.log(`Error: ${error}`);
-		return res.status(500).send({
-			isSuccess: false,
-			message: '예상치 못한 오류 발생',
-			error: error instanceof Error ? error.message : String(error),
-		});
+		unkownErrorHandler(res, error);
 	}
 };
 
-/* <-- 학습기록이 있는 학습세트 검색 --> */
+/* <-- 학습한 학습세트 검색 --> */
 export const getMyQuizletSearch = async (req: Request, res: Response) => {
 	try {
 		const { keyword, tagList, page, pageSize, order } = req.query;
@@ -78,7 +74,6 @@ export const getMyQuizletSearch = async (req: Request, res: Response) => {
 		// 사용자의 학습기록 조회
 		const userStudyLogs = await StudyLog.find({
 			owner: id,
-			mode: STUDY_MODE.ALL,
 		});
 
 		// 학습세트들의 ObjectId를 추출 (중복 제거)
@@ -108,18 +103,13 @@ export const getMyQuizletSearch = async (req: Request, res: Response) => {
 		// 학습세트와 연관된 최근 학습기록 조회
 		const quizletWithStudyLog = quizletList.map((quizlet: any) => {
 			const latestStudyLog = userStudyLogs.find(
-				(studyLog: any) =>
-					String(studyLog.about) === String(quizlet._id) &&
-					studyLog.mode === STUDY_MODE.ALL,
-			);
-			const totalStudyLog = userStudyLogs.filter(
 				(studyLog: any) => String(studyLog.about) === String(quizlet._id),
 			);
 			return {
 				...quizlet.toObject(),
 				studyLog: {
-					studyCount: totalStudyLog?.length,
-					createAt: latestStudyLog?.createAt || null,
+					studyCount: latestStudyLog?.views,
+					createAt: latestStudyLog?.updateAt,
 					numOfQuestionListToReview: latestStudyLog?.wrongList?.length || 0,
 				},
 			};
@@ -169,12 +159,7 @@ export const getMyQuizletSearch = async (req: Request, res: Response) => {
 			quizletList: pagedQuizletList,
 		});
 	} catch (error) {
-		console.log(`Error: ${error}`);
-		return res.status(500).send({
-			isSuccess: false,
-			message: '예상치 못한 오류 발생',
-			error: error instanceof Error ? error.message : String(error),
-		});
+		unkownErrorHandler(res, error);
 	}
 };
 
@@ -210,18 +195,15 @@ export const getOwnedQuizlet = async (req: Request, res: Response) => {
 
 		const userQuizlets = await Quizlet.find(query)
 			.populate('questionCardList')
-			.sort({ createAt: order === 'ascending' ? 1 : -1 });
+			.sort({ updateAt: order === 'ascending' ? 1 : -1 });
 		const userStudyLogs = await StudyLog.find({
 			owner: id,
-			mode: STUDY_MODE.ALL,
-		}).sort({ createAt: -1 });
+		});
 
 		// 학습세트와 연관된 최근 학습기록 조회
 		const quizletWithStudyLog = userQuizlets.map((quizlet: any) => {
 			const latestStudyLog = userStudyLogs.find(
-				(studyLog: any) =>
-					String(studyLog.about) === String(quizlet._id) &&
-					studyLog.mode === STUDY_MODE.ALL,
+				(studyLog: any) => String(studyLog.about) === String(quizlet._id),
 			);
 
 			return {
@@ -248,11 +230,6 @@ export const getOwnedQuizlet = async (req: Request, res: Response) => {
 			quizletList: pagedQuizletList,
 		});
 	} catch (error) {
-		console.log(`Error: ${error}`);
-		return res.status(500).send({
-			isSuccess: false,
-			message: '예상치 못한 오류 발생',
-			error: error instanceof Error ? error.message : String(error),
-		});
+		unkownErrorHandler(res, error);
 	}
 };
