@@ -1,16 +1,23 @@
 import fs from 'fs';
-import { Request, Response, NextFunction } from 'express';
+import { Request, Response } from 'express';
 import multer from 'multer';
 import storage from '../s3/s3.config';
 import multerConfig from '../s3/multer.config';
+import mime from 'mime';
 
 const uploadAvatarToS3 = async (file: Express.Multer.File) => {
 	try {
 		const fileContent = fs.readFileSync(file.path);
+
+		// MIME 타입 식별
+		const mimeType = mime.lookup(file.originalname);
+
 		const params = {
 			Bucket: process.env.S3_BUCKET_NAME as string,
 			Key: file.originalname as string,
 			Body: fileContent,
+			acl: 'public-read',
+			ContentType: mimeType,
 		};
 
 		const result = await storage.upload(params).promise();
