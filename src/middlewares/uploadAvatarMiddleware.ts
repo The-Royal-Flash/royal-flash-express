@@ -3,14 +3,25 @@ import { Request, Response } from 'express';
 import multer from 'multer';
 import storage from '../s3/s3.config';
 import multerConfig from '../s3/multer.config';
-import mime from 'mime';
+import path from 'path';
 
 const uploadAvatarToS3 = async (file: Express.Multer.File) => {
 	try {
 		const fileContent = fs.readFileSync(file.path);
+		const extname = path.extname(file.originalname).toLowerCase();
+		let mimeType = '';
 
-		// MIME 타입 식별
-		const mimeType = mime.lookup(file.originalname);
+		if (extname === '.jpg') {
+			mimeType = 'image/jpeg';
+		} else if (extname === '.jpeg') {
+			mimeType = 'image/jpeg';
+		} else if (extname === '.png') {
+			mimeType = 'image/png';
+		} else if (extname === '.gif') {
+			mimeType = 'image/gif';
+		}
+
+		console.log(mimeType);
 
 		const params = {
 			Bucket: process.env.S3_BUCKET_NAME as string,
