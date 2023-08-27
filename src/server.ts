@@ -11,7 +11,7 @@ app.use(cookieParser());
 app.use(
 	cors({
 		origin: [process.env.FE_SERVER as string],
-		methods: ['GET', 'POST'],
+		methods: ['GET', 'POST', 'DELETE'],
 		credentials: true,
 	}),
 );
