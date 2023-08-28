@@ -23,6 +23,9 @@ const createAccessToken = (payload: Ipayload) => {
 
 const verifyAccessToken = (token: string): mongoose.Types.ObjectId | false => {
 	try {
+		if (token[token.length - 1] === ';') {
+			token = token.split(';')[0];
+		}
 		const decoded: any = jwt.verify(token, ACCESS_SECRET);
 		return decoded.id;
 	} catch (error) {
@@ -44,6 +47,9 @@ const verifyRefreshToken = async (
 	token: string,
 ): Promise<false | mongoose.Types.ObjectId> => {
 	try {
+		if (token[token.length - 1] === ';') {
+			token = token.split(';')[0];
+		}
 		const decoded: any = jwt.verify(token, REFRESH_SECRET);
 		const refreshToken = await RefreshToken.findOne({
 			userId: decoded.id,
